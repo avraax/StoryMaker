@@ -1,0 +1,44 @@
+<!-- <div class="header">
+  <h1>Story Maker</h1>
+  <div *ngIf="!user" class="auth-container">
+    <h2>Log ind</h2>
+    <button (click)="loginWithGoogle()">Google</button>
+    <button (click)="loginWithFacebook()">Facebook</button>
+
+    <form (ngSubmit)="loginWithEmail()">
+      <input type="email" [(ngModel)]="email" placeholder="E-mail" required>
+      <input type="password" [(ngModel)]="password" placeholder="Adgangskode" required>
+      <button type="submit">Login</button>
+      <button type="button" (click)="registerWithEmail()">Opret konto</button>
+    </form>
+  </div>
+
+  <div *ngIf="user" class="profile-container">
+    <h2>Velkommen, {{ user.displayName || user.email }}</h2>
+    <img *ngIf="user.photoURL" [src]="user.photoURL" class="profile-pic">
+    <button (click)="logout()">Logout</button>
+
+    <app-saved-stories *ngIf="user && showSavedStories"></app-saved-stories>
+    <app-story *ngIf="user && !showSavedStories"></app-story>
+  </div>
+</div> -->
+
+
+<div class="header">
+  <h1>Story Maker</h1>
+  <button *ngIf="user" (click)="showSavedStories = !showSavedStories">
+    {{ showSavedStories ? 'Tilbage til Historier' : 'Mine Gemte Historier' }}
+  </button>
+  <app-login *ngIf="!user"></app-login>
+</div>
+
+<div *ngIf="user">
+  <mat-card class="profile-card">
+    <h2>Velkommen, {{ user.displayName || user.email }}</h2>
+    <img *ngIf="user.photoURL" [src]="user.photoURL" class="profile-pic">
+    <button mat-raised-button color="warn" (click)="logout()">Logout</button>
+  </mat-card>
+
+  <app-saved-stories *ngIf="user && showSavedStories" [user]="user"></app-saved-stories>
+  <app-story *ngIf="user && !showSavedStories" [user]="user"></app-story>
+</div>
