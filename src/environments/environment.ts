@@ -10,7 +10,11 @@ export const environment = {
     measurementId: "G-0DZN79H9GK"
   },
   openAIConfig: {
-    apiKey: "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",
+    apiKey: "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",
     apiUrl: 'https://api.openai.com/v1/chat/completions'
+  },
+  googleConfig: {
+    apiKey: "AIzaSyBrm7rnLnlJY1C7lQZ55Jzc8YjqcGrCpPc",
+    cseId: "316e90a974b7f412a",
   }
 };

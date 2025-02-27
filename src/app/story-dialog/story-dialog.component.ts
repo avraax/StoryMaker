@@ -11,8 +11,8 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
   template: `
     <h2>{{ data.story.topic }}</h2>
     <div *ngFor="let chapter of data.story.story; let i = index">
-      <h3>Kapitel {{ i + 1 }} - {{chapter.title}}</h3>
-      <p>{{ chapter.text }}</p>
+      <h3>{{chapter.title}}</h3>
+      <p>{{ chapter.texts }}</p>
       <div *ngFor="let img of chapter.images">
         <img [src]="img" class="chapter-image" *ngIf="img">
       </div>

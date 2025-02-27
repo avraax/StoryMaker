@@ -7,7 +7,7 @@ import { Firestore, collection, addDoc, getDocs, doc, setDoc, deleteDoc, getDoc 
 export class FirestoreService {
   constructor(private firestore: Firestore) {}
 
-  async saveStory(userId: string, mainCategory: string, subCategory: string, topic: string, story: { text: string, images: string[] }[]) {
+  async saveStory(userId: string, mainCategory: string, subCategory: string, topic: string, story: { texts: string[], images: string[] }[]) {
     const storiesRef = collection(this.firestore, `users/${userId}/stories`);
     await addDoc(storiesRef, { topic, mainCategory, subCategory, story, timestamp: new Date() });
   }

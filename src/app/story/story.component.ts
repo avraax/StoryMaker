@@ -11,6 +11,8 @@ import { FirestoreService } from './../services/firestore.service';
 import { CommonModule } from '@angular/common';
 import { QuizComponent } from './../quiz/quiz.component';
 import { FormsModule } from '@angular/forms';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 @Component({
   selector: 'app-story',
@@ -26,16 +28,16 @@ import { FormsModule } from '@angular/forms';
     QuizComponent,
     FormsModule
   ],
-	templateUrl: "story.component.html"
+  templateUrl: "story.component.html"
 })
 
 export class StoryComponent {
   @Input() user: User | undefined;
-  mainCategory: string = '';
-  subCategory: string = '';
-  inputTopic: string = '';
-  selectedGrade: number | null = null;
-  story: { title: string, text: string, images: string[] }[] = [];
+  mainCategory: string = 'sport';
+  subCategory: string = 'Spillere';
+  inputTopic: string = 'Lewandowski';
+  selectedGrade: number = 4;
+  story: { title: string, texts: string[], images: string[], imageQuery: string }[] = [];
   quizData: any;
   quizAvailable: boolean = false;
   previousQuizResult: any;
@@ -54,7 +56,11 @@ export class StoryComponent {
 
   gradeLevels = Array.from({ length: 11 }, (_, i) => i); // 0.-10. klasse
 
-  constructor(private aiService: AIService, private firestoreService: FirestoreService, private auth: Auth) {}
+  constructor(private aiService: AIService, private firestoreService: FirestoreService, private auth: Auth) { }
+
+  ngOnInit() {
+    this.updateSubcategories(); // Opdater underkategorier baseret på den valgte hovedkategori
+  }
 
   updateSubcategories() {
     const categoryMap: { [key: string]: string[] } = {
@@ -74,29 +80,63 @@ export class StoryComponent {
 
     this.loading = true;
     this.story = await this.aiService.generateStory(this.mainCategory, this.subCategory, this.inputTopic, this.selectedGrade);
-    this.quizData = await this.aiService.generateQuiz(this.story, this.selectedGrade);
-    this.quizAvailable = false;
-
-    const savedQuizResult = await this.firestoreService.getQuizResult(this.user.uid, this.story[0].text);
-    if (savedQuizResult) {
-      this.previousQuizResult = savedQuizResult;
-    }
 
     this.loading = false;
   }
 
-  startQuiz() {
+  async startQuiz() {
+    // this.quizData = await this.aiService.generateQuiz(this.story, this.selectedGrade);
+
+    // var currentUser = this.auth.currentUser as User;
+    // const savedQuizResult = await this.firestoreService.getQuizResult(currentUser.uid, this.story[0].texts);
+    // if (savedQuizResult) {
+    //   this.previousQuizResult = savedQuizResult;
+    // }
     this.quizAvailable = true;
   }
 
   async onQuizCompleted(result: { score: number; totalQuestions: number }) {
-    if (!this.user) return;
-    await this.firestoreService.saveQuizResult(this.user.uid, this.story[0].text, result.score, result.totalQuestions);
-    this.previousQuizResult = result;
+    // if (!this.user) return;
+    // await this.firestoreService.saveQuizResult(this.user.uid, this.story[0].texts, result.score, result.totalQuestions);
+    // this.previousQuizResult = result;
   }
 
   async saveStory() {
     if (!this.story.length || !this.user) return;
     await this.firestoreService.saveStory(this.user.uid, this.mainCategory, this.subCategory, this.inputTopic, this.story);
+  }
+
+  exportToPDF() {
+    const doc = new jsPDF('p', 'mm', 'a4'); // Portrait mode, millimeters, A4 size
+
+    // Select the story container
+    const content = document.querySelector('.story-box') as HTMLElement;
+
+    if (!content) {
+      console.error("Story content not found!");
+      return;
+    }
+
+    html2canvas(content, {
+      scale: 2,
+      useCORS: true, // Ensures external images are properly handled
+      backgroundColor: null, // Prevents background issues
+    }).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      const doc = new jsPDF('p', 'mm', 'a4');
+      doc.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      doc.save('story.pdf');
+    });
+  }
+
+  groupImages(images: string[], chunkSize: number): string[][] {
+    let result = [];
+    for (let i = 0; i < images.length; i += chunkSize) {
+      result.push(images.slice(i, i + chunkSize));
+    }
+    return result;
   }
 }
