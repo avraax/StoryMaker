@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - develop # Deploy to test
+      - develop
 
 jobs:
   build:
@@ -48,24 +48,9 @@ jobs:
           };
           EOF
 
-      - name: Debug - Check if environment.test.ts exists
-        run: |
-          if [ -f src/environments/environment.test.ts ]; then
-            echo "✅ environment.test.ts exists!"
-            cat src/environments/environment.test.ts
-          else
-            echo "❌ environment.test.ts is missing!"
-            exit 1
-          fi
-          
       - name: Build Angular app
-        run: npm run build -- --configuration=test
+        run: npm run test
 
-      - name: Verify Build Output
-        run: |
-          echo "Checking compiled output for environment variables..."
-          grep -R "firebaseConfig" dist/story-maker
-          
       - name: Deploy to Firebase (Test)
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:

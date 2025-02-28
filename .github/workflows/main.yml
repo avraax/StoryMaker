@@ -1,15 +1,15 @@
-name: Deploy to Firebase
+name: Deploy to Firebase (Production)
 
 on:
+  workflow_dispatch:
   push:
     branches:
-      - main    # Deploy to production
-      - develop # Deploy to test
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'test' }}
+    environment: production
 
     steps:
       - name: Checkout repository
@@ -23,9 +23,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Create environment.test.ts
+      - name: Create environment.production.ts
         run: |
-          cat <<EOF > src/environments/environment.test.ts
+          cat <<EOF > src/environments/environment.production.ts
           export const environment = {
             production: true,
             firebaseConfig: {
@@ -48,35 +48,12 @@ jobs:
           };
           EOF
 
-      - name: Verify Environment File Content (Debug Mode)
-        run: |
-          echo "Environment File Content:"
-          echo "------------------------"
-          cat src/environments/environment.test.ts
-          echo "------------------------"
-          echo "Raw Values:"
-          grep -v "^//" src/environments/environment.test.ts
-
-      - name: Debug Secrets Before Writing File
-        run: |
-          echo "DEBUG: Checking Secret Values"
-          echo "FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}"
-          echo "OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}"
-
-
-      - name: Print Secrets Without Masking (Temporary)
-        run: |
-          set +o history  # Disable command history masking
-          echo "FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}"
-          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}"
-
-          
       - name: Build Angular app
-        run: npm run build -- --configuration=test
+        run: npm run build
 
-      - name: Deploy to Firebase
+      - name: Deploy to Firebase (live)
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          channelId: ${{ github.ref == 'refs/heads/main' && 'live' || 'test' }}
+          channelId: live
