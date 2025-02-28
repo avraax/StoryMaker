@@ -48,7 +48,7 @@ jobs:
           };
           EOF
 
-      - name: Debug: Check if environment.test.ts exists
+      - name: Debug - Check if environment.test.ts exists
         run: |
           if [ -f src/environments/environment.test.ts ]; then
             echo "✅ environment.test.ts exists!"
