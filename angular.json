@@ -92,6 +92,9 @@
             "production": {
               "buildTarget": "story-maker:build:production"
             },
+            "test": {
+              "buildTarget": "story-maker:build:test"
+            },
             "development": {
               "buildTarget": "story-maker:build:development"
             }
