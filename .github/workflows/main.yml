@@ -48,10 +48,28 @@ jobs:
           };
           EOF
 
-      - name: Verify Environment File Content
+      - name: Verify Environment File Content (Debug Mode)
         run: |
           echo "Environment File Content:"
+          echo "------------------------"
           cat src/environments/environment.test.ts
+          echo "------------------------"
+          echo "Raw Values:"
+          grep -v "^//" src/environments/environment.test.ts
+
+      - name: Debug Secrets Before Writing File
+        run: |
+          echo "DEBUG: Checking Secret Values"
+          echo "FIREBASE_API_KEY: ${{ secrets.TEST_FIREBASE_API_KEY }}"
+          echo "OPENAI_API_KEY: ${{ secrets.TEST_OPENAI_API_KEY }}"
+
+
+      - name: Print Secrets Without Masking (Temporary)
+        run: |
+          set +o history  # Disable command history masking
+          echo "FIREBASE_API_KEY=${{ secrets.TEST_FIREBASE_API_KEY }}"
+          echo "OPENAI_API_KEY=${{ secrets.TEST_OPENAI_API_KEY }}"
+
           
       - name: Build Angular app
         run: npm run build -- --configuration=test
