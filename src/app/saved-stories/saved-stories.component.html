@@ -6,7 +6,6 @@
         <div>
           <h3>{{ story.topic }}</h3>
           <p>Kategori: {{ story.mainCategory }} - {{ story.subCategory }}</p>
-          <button mat-button color="primary" (click)="openStoryDialog(story)">Læs</button>
           <button mat-button color="warn" (click)="deleteStory(story.id)">Slet</button>
         </div>
       </mat-list-item>

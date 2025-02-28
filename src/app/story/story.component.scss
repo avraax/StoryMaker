@@ -1,0 +1,154 @@
+/* 🌟 General Page Styling */
+body {
+    background: #F8FAFC;
+    /* Light pastel blue-gray */
+    font-family: 'Arial', sans-serif;
+    color: #333;
+}
+
+/* 📌 Header */
+.header {
+    background: #98D4D4;
+    /* Softer muted cyan */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    border-radius: 10px;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 🎨 Story Container */
+.story-container {
+    margin: auto;
+    padding: 30px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 🟣 Section Titles */
+.section-title {
+    text-align: center;
+    font-size: 22px;
+    font-weight: bold;
+    color: #2C3E50;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #98D4D4;
+    /* Soft underline */
+    padding-bottom: 10px;
+}
+
+/* 🔄 Loading Spinner (Now Centered) */
+.loading-spinner {
+    display: block;
+    margin: 20px auto;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* 📖 Story Box (With Single Shadow) */
+.story-box {
+    background: #FFFFFF;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    /* Softer shadow */
+    margin-top: 30px;
+}
+
+/* 📝 Chapter Titles */
+.chapter-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #1565C0;
+    margin-bottom: 10px;
+    text-decoration: underline;
+}
+
+/* 📚 Chapter Layout */
+.chapter-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+/* ✅ Perfect Image-Text Alignment */
+.chapter-content {
+    display: flex;
+    align-items: flex-start;
+    /* Aligns text & images at the same height */
+    gap: 20px;
+}
+
+/* 📝 Chapter Text */
+.chapter-texts {
+    flex: 1;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* 📷 Chapter Images */
+.chapter-images {
+    width: 35%;
+    /* Adjusted to keep images aligned */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-block-start: 16px;
+}
+
+.chapter-image {
+    width: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+}
+
+/* Action Buttons */
+.story-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: #f0f8ff;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    margin-top: 20px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+button {
+    font-size: 16px;
+    font-weight: bold;
+    padding: 12px 20px;
+    border-radius: 25px;
+    transition: all 0.3s ease-in-out;
+}
+
+button:hover {
+    background: #71c9ce;
+    transform: scale(1.05);
+}
+
+.quiz-button {
+    margin-top: 20px;
+    background-color: #ffd700 !important;
+    color: #333 !important;
+}
+
+/* 🎞️ Fade-in Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

@@ -1,21 +1,12 @@
 <mat-card class="login-card">
     <h2>Log ind</h2>
 
-    <button mat-raised-button color="primary" (click)="loginWithGoogle()">Google</button>
-    <button mat-raised-button color="accent" (click)="loginWithFacebook()">Facebook</button>
-
-    <form (ngSubmit)="loginWithEmail()">
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>E-mail</mat-label>
-        <input matInput type="email" [(ngModel)]="email" name="email" required>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Adgangskode</mat-label>
-        <input matInput type="password" [(ngModel)]="password" name="password" required>
-      </mat-form-field>
-
-      <button mat-raised-button color="primary" type="submit">Login</button>
-      <button mat-button color="warn" (click)="registerWithEmail()">Opret konto</button>
-    </form>
-  </mat-card>
+    <div class="login-buttons">
+        <button mat-raised-button class="google-btn" (click)="loginWithGoogle()">
+            <img src="assets/icons/google-icon.svg" class="icon"> Log ind med Google
+        </button>
+        <button mat-raised-button class="facebook-btn" (click)="loginWithFacebook()">
+            <img src="assets/icons/facebook-icon.svg" class="icon"> Log ind med Facebook
+        </button>
+    </div>
+</mat-card>

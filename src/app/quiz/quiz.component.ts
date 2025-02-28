@@ -14,13 +14,7 @@ import { FormsModule } from '@angular/forms';
     FormsModule
   ],
 	templateUrl: "quiz.component.html",
-  styles: [`
-    .quiz-container {
-      margin-top: 20px;
-      padding: 20px;
-      text-align: center;
-    }
-  `]
+  styleUrls: ["quiz.component.scss"]
 })
 export class QuizComponent {
   @Input() quiz: any;

@@ -28,7 +28,8 @@ import html2canvas from 'html2canvas';
     QuizComponent,
     FormsModule
   ],
-  templateUrl: "story.component.html"
+  templateUrl: "story.component.html",
+  styleUrls: ["story.component.scss"]
 })
 
 export class StoryComponent {

@@ -1,0 +1,90 @@
+/* General Page Styling */
+body {
+    background-color: #F3F6FC;
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+    height: 100vh;
+    padding: 20px 0 0 0;
+}
+
+/* Header Styling */
+.header {
+    background: #4285F4; // Softer blue
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px; // More space
+    border-radius: 10px;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+/* Profile Section */
+.profile-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.username {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.profile-pic {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+button {
+    font-size: 14px;
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 5px;
+}
+
+/* Content Styling */
+.content {
+    margin-top: 20px;
+    background: white;
+}
+
+/* Login Card */
+.login-card {
+    max-width: 400px;
+    margin: auto;
+    padding: 20px;
+    text-align: center;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Buttons */
+button {
+    transition: all 0.3s ease-in-out;
+}
+
+button.logout {
+    font-size: 12px;
+    padding: 5px 10px;
+}
+
+
+button:hover {
+    transform: scale(1.05);
+}

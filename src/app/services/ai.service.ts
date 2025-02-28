@@ -15,22 +15,22 @@ export class AIService {
     topic: string,
     grade: number,
     chapterCount: number = 1,
-    maxStoryTokens: number = 1000, // Max er 4096
+    maxStoryTokens: number = 500, // Max er 4096
     imagesPerChapter: number = 2
   ): Promise<{ title: string; texts: string[]; images: string[], imageQuery: string }[]> {
-  
+
     const chapters: { title: string; texts: string[]; images: string[], imageQuery: string }[] = [];
-  
+
     // Beregn estimeret antal ord baseret på tokens (1 token ≈ 0.75 ord)
     const maxWords = Math.floor(maxStoryTokens * 0.75);
-  
+
     for (let i = 1; i <= chapterCount; i++) {
       // Kontekst fra tidligere kapitler
       const previousChaptersText = chapters.map((ch) => `${ch.title}\n\n${ch.texts}`).join("\n\n");
-  
+
       // Definer instruktioner for begyndelse, midte og slutning
       let roleInstructions = "";
-  
+
       if (i === 1) {
         roleInstructions = `
         **Dette er kapitel 1 af historien.**
@@ -55,7 +55,7 @@ export class AIService {
         - Sørg for en naturlig overgang til det næste kapitel.
         `;
       }
-  
+
       const response = await axios.post(
         environment.openAIConfig.apiUrl,
         {
@@ -63,7 +63,7 @@ export class AIService {
           messages: [
             {
               role: 'system',
-              content: `Du skriver faktuelle historier til skoleelever i klasse ${grade}. Hvert kapitel må maksimalt fylde ${maxStoryTokens} tokens (~${maxWords} ord).
+              content: `Du skriver faktuelle historier til folkeskoleelever i en dansk ${grade}. klasse. Teksten må gerne være letlæselig men stadig med ugangspunkt i klassetrin. Hvert kapitel må maksimalt fylde ${maxStoryTokens} tokens (~${maxWords} ord).
             
               🔹 **Output-krav**:
               1. Returnér en gyldig JSON-struktur, hvor værdierne for "title", "texts" (som array) og "imageQuery" har escape-sekvenser for invalide tegn som " (dobbelte anførselstegn), \\ (backslash) og eventuelle andre specielle tegn, der kan gøre JSON ugyldig.
@@ -95,9 +95,9 @@ export class AIService {
           headers: { Authorization: `Bearer ${environment.openAIConfig.apiKey}`, 'Content-Type': 'application/json' }
         }
       );
-  
+
       let jsonResponse = response.data.choices[0].message.content.trim();
-  
+
       let newChapter;
       try {
         newChapter = JSON.parse(jsonResponse);
@@ -106,24 +106,24 @@ export class AIService {
         console.error("Modtaget output:", jsonResponse);
         throw new Error("Fejl i AI-output, kunne ikke parse JSON.");
       }
-  
+
       if (!newChapter.title || !newChapter.texts || !newChapter.imageQuery) {
         console.error("Fejl: AI-output mangler felter", newChapter);
         throw new Error("AI-returneret JSON mangler nødvendige felter.");
       }
-  
+
       let images = await this.fetchImages([newChapter.imageQuery], imagesPerChapter);
       newChapter.images = images;
-  
+
       chapters.push(newChapter);
-  
+
       //Vent lidt for at undgå rate limits**
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
-  
+
     return chapters;
   }
-  
+
   async generateQuiz(story: { texts: string[], images: string[] }[], grade: number): Promise<any> {
     const response = await axios.post(
       environment.openAIConfig.apiUrl,
@@ -165,12 +165,6 @@ export class AIService {
       }
     }
 
-    // Fallback to AI-generated images if needed
-    while (images.length < maxImages) {
-      const aiImage = await this.fetchAIImage();
-      images.push(aiImage);
-    }
-
     return images;
   }
 
@@ -178,35 +172,38 @@ export class AIService {
     try {
       const response = await axios.get(`https://www.googleapis.com/customsearch/v1`, {
         params: {
-          q: searchQuery,       // Søgeterm
-          searchType: "image",  // Returnér kun billeder
-          cx: environment.googleConfig.cseId,  // Google Custom Search Engine ID
-          key: environment.googleConfig.apiKey,  // Google API Key
-          num: 10,  // Hent flere billeder for at have nok at filtrere i
-          rights: "cc_publicdomain",  // Kun offentlige billeder
+          q: searchQuery,
+          searchType: "image",
+          cx: environment.googleConfig.cseId,
+          key: environment.googleConfig.apiKey,
+          num: 10,
         },
       });
-  
-      let uniqueImages = new Set<string>();  // Brug et Set til at undgå dubletter
-  
+
+      if (!response.data.items || response.data.items.length === 0) {
+        console.warn("No images found from Google Custom Search.");
+        return [];
+      }
+
+      let uniqueImages = new Set<string>();
+
       for (const item of response.data.items) {
         const imageUrl = item.link;
-  
+
         if (!uniqueImages.has(imageUrl) && (await this.isImageAccessible(imageUrl))) {
           uniqueImages.add(imageUrl);
         }
-  
-        if (uniqueImages.size >= count) break;  // Stop når vi har nok billeder
+
+        if (uniqueImages.size >= count) break;
       }
-  
-      return Array.from(uniqueImages);  // Returnér som array
-  
-    } catch (error) {
-      console.error("Google Image Search error:", error);
-      return [];  // Fallback hvis API-kald fejler
+
+      return Array.from(uniqueImages);
+    } catch (error: any) {
+      console.error("Google Image Search error:", error.response?.data || error);
+      return [];
     }
   }
-  
+
   async isImageAccessible(url: string): Promise<boolean> {
     try {
       const response = await axios.head(url, { timeout: 5000 });
@@ -214,24 +211,5 @@ export class AIService {
     } catch {
       return false;  // Hvis billedet ikke kan hentes, filtreres det fra
     }
-  }
-  
-  /**
-   * Fetches a fallback AI-generated image from a free service like lexica.art.
-   */
-  async fetchAIImage(): Promise<string> {
-    try {
-      const response = await axios.get(`https://lexica.art/api/v1/search`, {
-        params: { q: "realistic photo", per_page: 1 },
-      });
-
-      if (response.data.images.length > 0) {
-        return response.data.images[0].src;
-      }
-    } catch (error) {
-      console.error("Error fetching AI-generated image:", error);
-    }
-
-    return "https://example.com/default-placeholder.jpg"; // Final fallback
   }
 }

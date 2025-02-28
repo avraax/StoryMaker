@@ -6,7 +6,6 @@ import { FormsModule } from '@angular/forms';
 import { StoryComponent } from './story/story.component';
 import { MatCardModule } from '@angular/material/card';
 import { LoginComponent } from './login/login.component';
-import { SavedStoriesComponent } from './saved-stories/saved-stories.component';
 
 @Component({
   selector: 'app-root',
@@ -18,29 +17,9 @@ import { SavedStoriesComponent } from './saved-stories/saved-stories.component';
     StoryComponent,
     MatCardModule,
     LoginComponent,
-    SavedStoriesComponent
+    // SavedStoriesComponent
   ],
-  styles: [`
-    .auth-container {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .profile-container {
-      text-align: center;
-    }
-    .profile-pic {
-      width: 100px;
-      border-radius: 50%;
-    }
-    input {
-      display: block;
-      margin: 10px auto;
-      padding: 8px;
-    }
-    button {
-      margin: 5px;
-    }
-  `]
+  styleUrls: ["app.component.scss"]
 })
 export class AppComponent {
   user: User | null = null;
@@ -51,7 +30,7 @@ export class AppComponent {
   constructor(private authService: AuthService) {
     this.authService.user$.subscribe(user => this.user = user);
   }
-  
+
   async logout() {
     await this.authService.logout();
   }

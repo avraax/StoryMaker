@@ -12,20 +12,7 @@ import { AuthService } from '../services/auth.service';
   standalone: true,
   imports: [CommonModule, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule, FormsModule],
   templateUrl: "login.component.html",
-  styles: [`
-    .login-card {
-      max-width: 400px;
-      margin: auto;
-      padding: 20px;
-      text-align: center;
-    }
-    .full-width {
-      width: 100%;
-    }
-    button {
-      margin-top: 10px;
-    }
-  `]
+  styleUrls: ["login.component.scss"]
 })
 export class LoginComponent {
   email = '';
@@ -41,11 +28,11 @@ export class LoginComponent {
     await this.authService.loginWithFacebook();
   }
 
-  async loginWithEmail() {
-    await this.authService.loginWithEmail(this.email, this.password);
-  }
+  // async loginWithEmail() {
+  //   await this.authService.loginWithEmail(this.email, this.password);
+  // }
 
-  async registerWithEmail() {
-    await this.authService.registerWithEmail(this.email, this.password);
-  }
+  // async registerWithEmail() {
+  //   await this.authService.registerWithEmail(this.email, this.password);
+  // }
 }
