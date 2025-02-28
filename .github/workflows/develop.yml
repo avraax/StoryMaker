@@ -1,15 +1,14 @@
-name: Deploy to Firebase
+name: Deploy to Firebase (Test Only)
 
 on:
   push:
     branches:
-      - main    # Deploy to production
       - develop # Deploy to test
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'test' }}
+    environment: test
 
     steps:
       - name: Checkout repository
@@ -27,7 +26,7 @@ jobs:
         run: |
           cat <<EOF > src/environments/environment.test.ts
           export const environment = {
-            production: true,
+            production: false,
             firebaseConfig: {
               apiKey: "${{ secrets.FIREBASE_API_KEY }}",
               authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
@@ -69,14 +68,13 @@ jobs:
           set +o history  # Disable command history masking
           echo "FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}"
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}"
-
           
       - name: Build Angular app
         run: npm run build -- --configuration=test
 
-      - name: Deploy to Firebase
+      - name: Deploy to Firebase (Test)
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          channelId: ${{ github.ref == 'refs/heads/main' && 'live' || 'test' }}
+          channelId: test
