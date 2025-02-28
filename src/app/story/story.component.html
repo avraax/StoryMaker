@@ -55,13 +55,13 @@
     <mat-card *ngIf="story.length > 0" class="story-actions">
         <div class="action-buttons">
             <button mat-raised-button color="accent" (click)="exportToPDF()">Eksporter til PDF</button>
-            <button mat-raised-button color="accent">Gem Historie</button>
+            <!-- <button mat-raised-button color="accent">Gem Historie</button> -->
         </div>
 
-        <mat-card *ngIf="previousQuizResult" class="quiz-result">
+        <!-- <mat-card *ngIf="previousQuizResult" class="quiz-result">
             <h3>Tidligere Quizresultat</h3>
             <p>Du fik {{ previousQuizResult.score }} / {{ previousQuizResult.totalQuestions }} rigtige!</p>
-        </mat-card>
+        </mat-card> -->
 
         <button mat-raised-button class="quiz-button" (click)="startQuiz()">Tag Quiz</button>
     </mat-card>
