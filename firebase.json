@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist/story-maker",
+    "public": "dist/story-maker/browser",
     "ignore": [
       "firebase.json",
       "**/.*",
