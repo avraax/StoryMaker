@@ -14,9 +14,9 @@ export class AIService {
     subCategory: string,
     topic: string,
     grade: number,
-    chapterCount: number = 2,
-    maxStoryTokens: number = 500, // Max er 4096
-    imagesPerChapter: number = 4
+    chapterCount: number = 10,
+    maxStoryTokens: number = 2000, // Max er 4096
+    imagesPerChapter: number = 6
   ): Promise<{ title: string; texts: string[]; images: string[], imageQuery: string }[]> {
 
     const chapters: { title: string; texts: string[]; images: string[], imageQuery: string }[] = [];
