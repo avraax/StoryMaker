@@ -14,9 +14,9 @@ export class AIService {
     subCategory: string,
     topic: string,
     grade: number,
-    chapterCount: number = 1,
+    chapterCount: number = 2,
     maxStoryTokens: number = 500, // Max er 4096
-    imagesPerChapter: number = 2
+    imagesPerChapter: number = 4
   ): Promise<{ title: string; texts: string[]; images: string[], imageQuery: string }[]> {
 
     const chapters: { title: string; texts: string[]; images: string[], imageQuery: string }[] = [];
@@ -25,9 +25,6 @@ export class AIService {
     const maxWords = Math.floor(maxStoryTokens * 0.75);
 
     for (let i = 1; i <= chapterCount; i++) {
-      // Kontekst fra tidligere kapitler
-      const previousChaptersText = chapters.map((ch) => `${ch.title}\n\n${ch.texts}`).join("\n\n");
-
       // Definer instruktioner for begyndelse, midte og slutning
       let roleInstructions = "";
 
@@ -124,6 +121,21 @@ export class AIService {
     return chapters;
   }
 
+  async fetchImages(queries: string[], maxImages: number): Promise<string[]> {
+    let images: string[] = [];
+
+    // Try fetching real images from Unsplash
+    for (const query of queries) {
+      if (images.length >= maxImages) break;
+      const wikiMediaImages = await this.fetchGoogleImage(query, maxImages);
+      if (wikiMediaImages && wikiMediaImages.length > 0) {
+        images.push(...wikiMediaImages);
+      }
+    }
+
+    return images;
+  }
+
   async generateQuiz(story: { texts: string[], images: string[] }[], grade: number): Promise<any> {
     const response = await axios.post(
       environment.openAIConfig.apiUrl,
@@ -148,24 +160,6 @@ export class AIService {
     );
 
     return JSON.parse(response.data.choices[0].message.content.trim());
-  }
-
-  /**
-   * Fetches images from Unsplash, falls back to AI-generated images if none found.
-   */
-  async fetchImages(queries: string[], maxImages: number): Promise<string[]> {
-    let images: string[] = [];
-
-    // Try fetching real images from Unsplash
-    for (const query of queries) {
-      if (images.length >= maxImages) break;
-      const wikiMediaImages = await this.fetchGoogleImage(query, maxImages);
-      if (wikiMediaImages && wikiMediaImages.length > 0) {
-        images.push(...wikiMediaImages);
-      }
-    }
-
-    return images;
   }
 
   async fetchGoogleImage(searchQuery: string, count: number = 2): Promise<string[]> {

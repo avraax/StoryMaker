@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import { Auth, User, user } from '@angular/fire/auth';
 import { AIService } from './../services/ai.service';
 import { MatCardModule } from '@angular/material/card';
@@ -6,8 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { FirestoreService } from './../services/firestore.service';
 import { CommonModule } from '@angular/common';
 import { QuizComponent } from './../quiz/quiz.component';
 import { FormsModule } from '@angular/forms';
@@ -25,6 +25,7 @@ import html2canvas from 'html2canvas';
     MatFormFieldModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    MatIconModule,
     QuizComponent,
     FormsModule
   ],
@@ -33,6 +34,7 @@ import html2canvas from 'html2canvas';
 })
 
 export class StoryComponent {
+  @ViewChild('storyContentContainer', { static: false }) storyContentRef!: ElementRef;
   @Input() user: User | undefined;
   mainCategory: string = 'sport';
   subCategory: string = 'Spillere';
@@ -43,6 +45,7 @@ export class StoryComponent {
   quizAvailable: boolean = false;
   previousQuizResult: any;
   loading: boolean = false;
+  isFullscreen = false;
 
 
   subcategories: string[] = [];
@@ -57,7 +60,7 @@ export class StoryComponent {
 
   gradeLevels = Array.from({ length: 11 }, (_, i) => i); // 0.-10. klasse
 
-  constructor(private aiService: AIService, private firestoreService: FirestoreService, private auth: Auth) { }
+  constructor(private aiService: AIService, private auth: Auth) { }
 
   ngOnInit() {
     this.updateSubcategories(); // Opdater underkategorier baseret på den valgte hovedkategori
@@ -96,48 +99,78 @@ export class StoryComponent {
     this.quizAvailable = true;
   }
 
+  toggleFullscreen() {
+    this.isFullscreen = !this.isFullscreen;
+
+    if (this.isFullscreen) {
+      document.body.style.overflow = 'hidden'; // Disable page scrolling
+    } else {
+      document.body.style.overflow = ''; // Restore default scrolling
+    }
+  }
+
   async onQuizCompleted(result: { score: number; totalQuestions: number }) {
     // if (!this.user) return;
     // await this.firestoreService.saveQuizResult(this.user.uid, this.story[0].texts, result.score, result.totalQuestions);
     // this.previousQuizResult = result;
   }
 
-  async saveStory() {
-    if (!this.story.length || !this.user) return;
-    await this.firestoreService.saveStory(this.user.uid, this.mainCategory, this.subCategory, this.inputTopic, this.story);
-  }
-
   exportToPDF() {
-    const doc = new jsPDF('p', 'mm', 'a4'); // Portrait mode, millimeters, A4 size
+    const margin = 10; // Side margins in mm
+    const pageWidth = 210; // A4 width in mm
+    const pageHeight = 297; // A4 height in mm
+    const doc = new jsPDF('p', 'mm', 'a4'); // Portrait mode
 
-    // Select the story container
-    const content = document.querySelector('.story-box') as HTMLElement;
+    const chapters = this.storyContentRef.nativeElement.querySelectorAll('.chapter-container');
 
-    if (!content) {
-      console.error("Story content not found!");
+    if (!chapters.length) {
+      console.error("No chapters found for export!");
       return;
     }
 
-    html2canvas(content, {
-      scale: 2,
-      useCORS: true, // Ensures external images are properly handled
-      backgroundColor: null, // Prevents background issues
-    }).then(canvas => {
-      const imgData = canvas.toDataURL('image/png');
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let isFirstPage = true;
 
-      const doc = new jsPDF('p', 'mm', 'a4');
-      doc.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      doc.save('story.pdf');
-    });
+    const processChapter = async (index: number) => {
+      if (index >= chapters.length) {
+        doc.save('story.pdf');
+        return;
+      }
+
+      const chapter = chapters[index] as HTMLElement;
+
+      try {
+        const canvas = await html2canvas(chapter, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: null,
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = pageWidth - 2 * margin; // Adjust width for margins
+        const imgHeight = (canvas.height * imgWidth) / canvas.width; // Maintain aspect ratio
+
+        if (!isFirstPage) {
+          doc.addPage(); // Add a new page for each chapter
+        }
+
+        doc.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+
+        isFirstPage = false; // Ensure new pages are added after the first
+
+        await processChapter(index + 1); // Process the next chapter recursively
+      } catch (error) {
+        console.error("Error processing chapter:", error);
+      }
+    };
+
+    processChapter(0); // Start processing chapters
   }
 
   groupImages(images: string[], chunkSize: number): string[][] {
-    let result = [];
+    const groupedImages: string[][] = [];
     for (let i = 0; i < images.length; i += chunkSize) {
-      result.push(images.slice(i, i + chunkSize));
+      groupedImages.push(images.slice(i, i + chunkSize));
     }
-    return result;
+    return groupedImages;
   }
 }

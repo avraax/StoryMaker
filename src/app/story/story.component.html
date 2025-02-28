@@ -42,30 +42,20 @@
 
     <mat-progress-spinner *ngIf="loading" mode="indeterminate" class="loading-spinner"></mat-progress-spinner>
 
-    <mat-card *ngIf="story.length > 0" class="story-box">
+    <mat-card *ngIf="!loading && story.length > 0" class="story-box">
         <h2>Genereret Historie:</h2>
-        <div *ngFor="let chapter of story; let i = index" class="chapter-container">
-            <div class="chapter-texts-container">
-                <h3 class="chapter-title">{{ chapter.title }}</h3>
-                <div class="chapter-content">
-                    <div class="chapter-texts">
-                        <p *ngFor="let paragraph of chapter.texts; let j = index" class="chapter-paragraph">{{ paragraph
-                            }}</p>
-                    </div>
-                    <div class="chapter-images" *ngIf="chapter.images?.length">
-                        <div class="image-row" *ngFor="let imgChunk of groupImages(chapter.images, 2)">
-                            <img *ngFor="let img of imgChunk" [src]="img" class="chapter-image">
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <mat-icon class="fullscreen-icon" (click)="toggleFullscreen()">fullscreen</mat-icon>
+
+        <!-- Wrapped story content for PDF generation -->
+        <div #storyContentContainer>
+            <ng-container *ngTemplateOutlet="storyContent"></ng-container>
         </div>
     </mat-card>
 
     <mat-card *ngIf="story.length > 0" class="story-actions">
         <div class="action-buttons">
             <button mat-raised-button color="accent" (click)="exportToPDF()">Eksporter til PDF</button>
-            <button mat-raised-button color="accent" (click)="saveStory()">Gem Historie</button>
+            <button mat-raised-button color="accent">Gem Historie</button>
         </div>
 
         <mat-card *ngIf="previousQuizResult" class="quiz-result">
@@ -78,3 +68,38 @@
 
     <app-quiz *ngIf="quizAvailable" [quiz]="quizData" (quizCompleted)="onQuizCompleted($event)"></app-quiz>
 </mat-card>
+
+<!-- Fullscreen View -->
+<div *ngIf="isFullscreen" class="fullscreen-view">
+    <mat-icon class="close-fullscreen-icon" (click)="toggleFullscreen()">close</mat-icon>
+    <div class="fullscreen-view-content">
+        <ng-container *ngTemplateOutlet="storyContent"></ng-container>
+    </div>
+</div>
+
+<!-- Reusable Story Template -->
+<ng-template #storyContent>
+    <div *ngFor="let chapter of story; let i = index" class="chapter-container">
+        <div class="chapter-texts-container">
+            <h3 class="chapter-title">{{ chapter.title }}</h3>
+            <div class="chapter-content">
+                
+                <!-- Text on 60% and Images on 40% -->
+                <div class="chapter-layout">
+                    <div class="chapter-texts">
+                        <p *ngFor="let paragraph of chapter.texts" class="chapter-paragraph">{{ paragraph }}</p>
+                    </div>
+
+                    <div class="chapter-images" *ngIf="chapter.images?.length">
+                        <div class="image-row" *ngFor="let imgChunk of groupImages(chapter.images, 2)">
+                            <div class="image-wrapper" *ngFor="let img of imgChunk">
+                                <img [src]="img" class="chapter-image">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</ng-template>
