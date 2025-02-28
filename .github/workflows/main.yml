@@ -3,8 +3,8 @@ name: Deploy to Firebase
 on:
   push:
     branches:
-      - main
-      - develop
+      - main    # Deploy to production
+      - develop # Deploy to test
 
 jobs:
   build:
@@ -23,63 +23,33 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Create Environment Config
+      - name: Create environment.test.ts
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            cat <<EOF > src/environments/environment.production.ts
-            export const environment = {
-              production: true,
-              firebaseConfig: {
-                apiKey: "${{ secrets.FIREBASE_API_KEY }}",
-                authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
-                projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
-                storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
-                messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
-                appId: "${{ secrets.FIREBASE_APP_ID }}",
-                measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
-              },
-              openAIConfig: {
-                apiKey: "${{ secrets.OPENAI_API_KEY }}",
-                apiUrl: "${{ secrets.OPENAI_API_URL }}"
-              },
-              googleConfig: {
-                apiKey: "${{ secrets.GOOGLE_API_KEY }}",
-                cseId: "${{ secrets.GOOGLE_CSE_ID }}"
-              }
-            };
-            EOF
-          else
-            cat <<EOF > src/environments/environment.test.ts
-            export const environment = {
-              production: false,
-              firebaseConfig: {
-                apiKey: "${{ secrets.TEST_FIREBASE_API_KEY }}",
-                authDomain: "${{ secrets.TEST_FIREBASE_AUTH_DOMAIN }}",
-                projectId: "${{ secrets.TEST_FIREBASE_PROJECT_ID }}",
-                storageBucket: "${{ secrets.TEST_FIREBASE_STORAGE_BUCKET }}",
-                messagingSenderId: "${{ secrets.TEST_FIREBASE_MESSAGING_SENDER_ID }}",
-                appId: "${{ secrets.TEST_FIREBASE_APP_ID }}",
-                measurementId: "${{ secrets.TEST_FIREBASE_MEASUREMENT_ID }}"
-              },
-              openAIConfig: {
-                apiKey: "${{ secrets.TEST_OPENAI_API_KEY }}",
-                apiUrl: "${{ secrets.TEST_OPENAI_API_URL }}"
-              },
-              googleConfig: {
-                apiKey: "${{ secrets.TEST_GOOGLE_API_KEY }}",
-                cseId: "${{ secrets.TEST_GOOGLE_CSE_ID }}"
-              }
-            };
-            EOF
-          fi
+          cat <<EOF > src/environments/environment.test.ts
+          export const environment = {
+            production: true,
+            firebaseConfig: {
+              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
+              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
+              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
+              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
+              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
+              appId: "${{ secrets.FIREBASE_APP_ID }}",
+              measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
+            },
+            openAIConfig: {
+              apiKey: "${{ secrets.OPENAI_API_KEY }}",
+              apiUrl: "${{ secrets.OPENAI_API_URL }}"
+            },
+            googleConfig: {
+              apiKey: "${{ secrets.GOOGLE_API_KEY }}",
+              cseId: "${{ secrets.GOOGLE_CSE_ID }}"
+            }
+          };
+          EOF
 
-      - name: Build Angular App
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            npm run build -- --configuration=production
-          else
-            npm run build -- --configuration=test
-          fi
+      - name: Build Angular app
+        run: npm run build -- --configuration=test
 
       - name: Deploy to Firebase
         uses: FirebaseExtended/action-hosting-deploy@v0
