@@ -1,6 +1,7 @@
 name: Deploy to Firebase (Test Only)
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - develop # Deploy to test
@@ -47,31 +48,24 @@ jobs:
           };
           EOF
 
-      - name: Verify Environment File Content (Debug Mode)
+      - name: Debug: Check if environment.test.ts exists
         run: |
-          echo "Environment File Content:"
-          echo "------------------------"
-          cat src/environments/environment.test.ts
-          echo "------------------------"
-          echo "Raw Values:"
-          grep -v "^//" src/environments/environment.test.ts
-
-      - name: Debug Secrets Before Writing File
-        run: |
-          echo "DEBUG: Checking Secret Values"
-          echo "FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}"
-          echo "OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}"
-
-
-      - name: Print Secrets Without Masking (Temporary)
-        run: |
-          set +o history  # Disable command history masking
-          echo "FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}"
-          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}"
+          if [ -f src/environments/environment.test.ts ]; then
+            echo "✅ environment.test.ts exists!"
+            cat src/environments/environment.test.ts
+          else
+            echo "❌ environment.test.ts is missing!"
+            exit 1
+          fi
           
       - name: Build Angular app
         run: npm run build -- --configuration=test
 
+      - name: Verify Build Output
+        run: |
+          echo "Checking compiled output for environment variables..."
+          grep -R "firebaseConfig" dist/story-maker
+          
       - name: Deploy to Firebase (Test)
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
