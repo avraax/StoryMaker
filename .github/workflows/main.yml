@@ -48,6 +48,11 @@ jobs:
           };
           EOF
 
+      - name: Verify Environment File Content
+        run: |
+          echo "Environment File Content:"
+          cat src/environments/environment.production.ts || cat src/environments/environment.test.ts
+          
       - name: Build Angular app
         run: npm run build -- --configuration=test
 
