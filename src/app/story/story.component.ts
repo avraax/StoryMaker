@@ -38,7 +38,7 @@ export class StoryComponent {
   @Input() user: User | undefined;
   mainCategory: string = 'sport';
   subCategory: string = 'Spillere';
-  inputTopic: string = 'Lewandowski';
+  inputTopic: string = '';
   selectedGrade: number = 4;
   story: { title: string, texts: string[], images: string[], imageQuery: string }[] = [];
   quizData: any;
@@ -67,20 +67,27 @@ export class StoryComponent {
   }
 
   updateSubcategories() {
-    const categoryMap: { [key: string]: string[] } = {
-      sport: this.sportSubcategories,
-      music: this.musicSubcategories,
-      science: this.scienceSubcategories,
-      history: this.historySubcategories,
-      film: this.filmSubcategories,
-      nature: this.natureSubcategories,
-      space: this.spaceSubcategories,
-    };
-    this.subcategories = categoryMap[this.mainCategory] || [];
+    if (this.mainCategory === 'other') {
+      this.subcategories = [];
+      this.subCategory = '';
+    } else {
+      const categoryMap: { [key: string]: string[] } = {
+        sport: this.sportSubcategories,
+        music: this.musicSubcategories,
+        science: this.scienceSubcategories,
+        history: this.historySubcategories,
+        film: this.filmSubcategories,
+        nature: this.natureSubcategories,
+        space: this.spaceSubcategories,
+      };
+      this.subcategories = categoryMap[this.mainCategory] || [];
+    }
   }
 
   async generateStory() {
-    if (!this.mainCategory || !this.subCategory || !this.inputTopic || this.selectedGrade === null || !this.user) return;
+    if (!this.inputTopic || !this.selectedGrade) {
+      return;
+    }
 
     this.loading = true;
     this.story = await this.aiService.generateStory(this.mainCategory, this.subCategory, this.inputTopic, this.selectedGrade);

@@ -11,20 +11,22 @@
             <mat-option value="film">Film & TV</mat-option>
             <mat-option value="nature">Natur & Miljø</mat-option>
             <mat-option value="space">Rummet</mat-option>
+            <mat-option value="other">Andet</mat-option>  <!-- Added "Andet" -->
         </mat-select>
     </mat-form-field>
-
-    <mat-form-field appearance="outline" class="full-width" *ngIf="mainCategory">
+    
+    <!-- Hide subcategory selection if "Andet" is chosen -->
+    <mat-form-field appearance="outline" class="full-width" *ngIf="mainCategory && mainCategory !== 'other'">
         <mat-label>Vælg en underkategori</mat-label>
         <mat-select [(ngModel)]="subCategory">
             <mat-option *ngFor="let sub of subcategories" [value]="sub">{{ sub }}</mat-option>
         </mat-select>
     </mat-form-field>
-
-    <mat-form-field appearance="outline" class="full-width" *ngIf="subCategory">
+    
+    <mat-form-field appearance="outline" class="full-width">
         <mat-label>Indtast specifikt emne</mat-label>
         <input matInput [(ngModel)]="inputTopic" placeholder="Fx Einstein, The Beatles, eller Romerriget">
-    </mat-form-field>
+    </mat-form-field>    
 
     <mat-form-field appearance="outline" class="full-width">
         <mat-label>Vælg Klassetrin</mat-label>
@@ -52,7 +54,7 @@
         </div>
     </mat-card>
 
-    <mat-card *ngIf="story.length > 0" class="story-actions">
+    <mat-card *ngIf="!loading && story.length > 0" class="story-actions">
         <div class="action-buttons">
             <button mat-raised-button color="accent" (click)="exportToPDF()">Eksporter til PDF</button>
             <!-- <button mat-raised-button color="accent">Gem Historie</button> -->
@@ -61,9 +63,9 @@
         <!-- <mat-card *ngIf="previousQuizResult" class="quiz-result">
             <h3>Tidligere Quizresultat</h3>
             <p>Du fik {{ previousQuizResult.score }} / {{ previousQuizResult.totalQuestions }} rigtige!</p>
-        </mat-card> -->
+        </mat-card>
 
-        <button mat-raised-button class="quiz-button" (click)="startQuiz()">Tag Quiz</button>
+        <button mat-raised-button class="quiz-button" (click)="startQuiz()">Tag Quiz</button> -->
     </mat-card>
 
     <app-quiz *ngIf="quizAvailable" [quiz]="quizData" (quizCompleted)="onQuizCompleted($event)"></app-quiz>

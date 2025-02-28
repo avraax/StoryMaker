@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../services/auth.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -17,6 +18,7 @@ import { AuthService } from '../services/auth.service';
 export class LoginComponent {
   email = '';
   password = '';
+  enableEmailLogin = environment.enableEmailLogin;
 
   constructor(private authService: AuthService) {}
 
@@ -28,11 +30,11 @@ export class LoginComponent {
     await this.authService.loginWithFacebook();
   }
 
-  // async loginWithEmail() {
-  //   await this.authService.loginWithEmail(this.email, this.password);
-  // }
+  async loginWithEmail() {
+    await this.authService.loginWithEmail(this.email, this.password);
+  }
 
-  // async registerWithEmail() {
-  //   await this.authService.registerWithEmail(this.email, this.password);
-  // }
+  async registerWithEmail() {
+    await this.authService.registerWithEmail(this.email, this.password);
+  }
 }

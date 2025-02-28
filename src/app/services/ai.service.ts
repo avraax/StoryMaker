@@ -81,7 +81,10 @@ export class AIService {
             },
             {
               role: 'user',
-              content: `Generér **kapitel ${i}** af en faktuel historie om **${topic}** inden for **${subCategory}** i **${mainCategory}**.
+              content: mainCategory !== 'other' ? `Generér **kapitel ${i}** af en faktuel historie om **${topic}** inden for **${subCategory}** i **${mainCategory}**.
+              - Kapitlet skal **bygge videre** på tidligere kapitler og følge en sammenhængende struktur.
+              - Returnér **kun** valid JSON som beskrevet.` :
+              `Generér **kapitel ${i}** af en faktuel historie om **${topic}**.
               - Kapitlet skal **bygge videre** på tidligere kapitler og følge en sammenhængende struktur.
               - Returnér **kun** valid JSON som beskrevet.`
             }

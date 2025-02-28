@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Auth, User, user, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, signOut } from '@angular/fire/auth';
+import { Auth, User, user, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from '@angular/fire/auth';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({
@@ -25,16 +25,16 @@ export class AuthService {
     this.userSubject.next(credential.user);
   }
 
-  // async loginWithEmail(email: string, password: string) {
-  //   const credential = await signInWithEmailAndPassword(this.auth, email, password);
-  //   this.userSubject.next(credential.user);
-  // }
+  async loginWithEmail(email: string, password: string) {
+    const credential = await signInWithEmailAndPassword(this.auth, email, password);
+    this.userSubject.next(credential.user);
+  }
 
-  // async registerWithEmail(email: string, password: string) {
-  //   const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
-  //   // await updateProfile(userCredential.user);
-  //   this.userSubject.next(userCredential.user);
-  // }
+  async registerWithEmail(email: string, password: string) {
+    const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
+    // await updateProfile(userCredential.user);
+    this.userSubject.next(userCredential.user);
+  }
 
   getCurrentUser(): User | null {
     return this.auth.currentUser;
