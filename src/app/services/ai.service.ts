@@ -15,43 +15,17 @@ export class AIService {
     topic: string,
     grade: number,
     chapterCount: number = 3,
-    maxStoryTokens: number = 500, // Max er 4096
+    maxStoryTokens: number = 1000,
     imagesPerChapter: number = 4
   ): Promise<{ title: string; texts: string[]; images: string[], imageQuery: string }[]> {
 
     const chapters: { title: string; texts: string[]; images: string[], imageQuery: string }[] = [];
-
-    // Beregn estimeret antal ord baseret på tokens (1 token ≈ 0.75 ord)
     const maxWords = Math.floor(maxStoryTokens * 0.75);
 
-    for (let i = 1; i <= chapterCount; i++) {
-      // Definer instruktioner for begyndelse, midte og slutning
-      let roleInstructions = "";
+    let storySoFar = ""; // Keeps track of previous chapters
 
-      if (i === 1) {
-        roleInstructions = `
-        **Dette er kapitel 1 af historien.**
-        - Introducér emnet klart og engagerende.
-        - Giv **baggrundsinformation og kontekst**.
-        - Forklar vigtige nøglepunkter for at sætte rammen for historien.
-        - **Afslut ikke historien her**, men gør læseren klar til de næste kapitler.
-        `;
-      } else if (i === chapterCount) {
-        roleInstructions = `
-        **Dette er det sidste kapitel i historien.**
-        - **Opsummer vigtige pointer** fra de tidligere kapitler.
-        - Sørg for en **klar konklusion**, hvor alt bindes sammen.
-        - Giv **en stærk afslutning**, der efterlader læseren med en forståelse af emnet.
-        `;
-      } else {
-        roleInstructions = `
-        **Dette er et midterkapitel.**
-        - Byg videre på **de tidligere kapitler**.
-        - Tilføj flere detaljer, forklaringer og eksempler.
-        - Introducér nye relevante fakta, men hold en logisk progression.
-        - Sørg for en naturlig overgang til det næste kapitel.
-        `;
-      }
+    for (let i = 1; i <= chapterCount; i++) {
+      let roleInstructions = this.getRoleInstructions(i, chapterCount);
 
       const response = await axios.post(
         environment.openAIConfig.apiUrl,
@@ -60,33 +34,38 @@ export class AIService {
           messages: [
             {
               role: 'system',
-              content: `Du skriver faktuelle historier til folkeskoleelever i en dansk ${grade}. klasse. Teksten må gerne være letlæselig men stadig med ugangspunkt i klassetrin. Hvert kapitel må maksimalt fylde ${maxStoryTokens} tokens (~${maxWords} ord).
+              content: `
+              Du skriver faktuelle historier til folkeskoleelever i en dansk ${grade}. klasse.
+              Historien skal være sammenhængende og bygge videre fra kapitel til kapitel.
             
               🔹 **Output-krav**:
-              1. Returnér en gyldig JSON-struktur, hvor værdierne for "title", "texts" (som array) og "imageQuery" har escape-sekvenser for invalide tegn som " (dobbelte anførselstegn), \\ (backslash) og eventuelle andre specielle tegn, der kan gøre JSON ugyldig.
-              2. **Teksten i "texts"-feltet skal være et array af afsnit**, hvor hvert element i arrayet er en enkelt afsnitstreng.
-              3. JSON-strukturen skal være:
+              1. Returnér en gyldig JSON-struktur:
                  {
-                   "title": "Kapitel X: Titel på kapitel",
-                   "texts": [
-                     "Dette er første afsnit.",
-                     "Dette er andet afsnit.",
-                     "Dette er tredje afsnit."
-                   ],
-                   "imageQuery": "Søgeord til google customsearch billeder baseret på ${topic} og kapitel kontekst"
+                   "title": "Kapitel X: Titel",
+                   "texts": ["Afsnit 1", "Afsnit 2"],
+                   "imageQuery": "Optimeret Google-billedsøgning"
                  }
-              4. Brug **ingen markdown, HTML eller specialtegn**.
-              5. **Ingen ekstra linjer eller tekst udenfor JSON-objektet**.
+              2. **For "imageQuery"**, generér en optimeret søgestreng til Google Custom Search API:
+                 - **Brug præcise nøgleord** (f.eks. "vulkanudbrud", "middelalderborg", "solsystemet").
+                 - **Brug \`intitle:\` hvis relevant** (f.eks. "intitle:vulkanudbrud").
+                 - **Undgå brede søgeord** som "historie", "info", "tema".
+                 - **Ingen markdown, HTML eller specialtegn**.
+              3. **Ingen ekstra tekst udenfor JSON-objektet**.
               `
-            },
+            }
+            ,
             {
               role: 'user',
-              content: mainCategory !== 'other' ? `Generér **kapitel ${i}** af en faktuel historie om **${topic}** inden for **${subCategory}** i **${mainCategory}**.
-              - Kapitlet skal **bygge videre** på tidligere kapitler og følge en sammenhængende struktur.
-              - Returnér **kun** valid JSON som beskrevet.` :
-              `Generér **kapitel ${i}** af en faktuel historie om **${topic}**.
-              - Kapitlet skal **bygge videre** på tidligere kapitler og følge en sammenhængende struktur.
-              - Returnér **kun** valid JSON som beskrevet.`
+              content: `
+                Generér **kapitel ${i}** af en faktuel historie om **${topic}**${mainCategory !== 'other' ? ` inden for **${subCategory}** i **${mainCategory}**` : ''}.
+                
+                Historien skal være sammenhængende og fortsætte fra tidligere kapitler.
+                
+                ${i > 1 ? `🔹 **Resumé af historien indtil nu:** ${storySoFar}` : ''}
+                
+                - ${roleInstructions}
+                - Returnér **kun** valid JSON som beskrevet.
+              `.trim()
             }
           ],
           max_tokens: maxStoryTokens
@@ -97,8 +76,8 @@ export class AIService {
       );
 
       let jsonResponse = response.data.choices[0].message.content.trim();
-
       let newChapter;
+
       try {
         newChapter = JSON.parse(jsonResponse);
       } catch (error) {
@@ -112,91 +91,49 @@ export class AIService {
         throw new Error("AI-returneret JSON mangler nødvendige felter.");
       }
 
-      let images = await this.fetchImages([newChapter.imageQuery], imagesPerChapter);
+      let images = await this.fetchImages(newChapter.imageQuery, imagesPerChapter);
       newChapter.images = images;
 
       chapters.push(newChapter);
 
-      //Vent lidt for at undgå rate limits**
+      storySoFar += `\nKapitel ${i}: ${newChapter.title}\n${newChapter.texts.join(" ")}\n`;
+
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
 
     return chapters;
   }
 
-  async fetchImages(queries: string[], maxImages: number): Promise<string[]> {
+  async fetchImages(imageQuery: string, maxImages: number): Promise<string[]> {
     let images: string[] = [];
 
-    // Try fetching real images from Unsplash
-    for (const query of queries) {
-      if (images.length >= maxImages) break;
-      const wikiMediaImages = await this.fetchGoogleImage(query, maxImages);
-      if (wikiMediaImages && wikiMediaImages.length > 0) {
-        images.push(...wikiMediaImages);
-      }
+    const googleImages = await this.fetchGoogleImage(imageQuery, maxImages);
+    if (googleImages && googleImages.length > 0) {
+      images.push(...googleImages);
     }
 
     return images;
   }
 
-  async generateQuiz(story: { texts: string[], images: string[] }[], grade: number): Promise<any> {
-    const response = await axios.post(
-      environment.openAIConfig.apiUrl,
-      {
-        model: 'gpt-4-turbo',
-        messages: [
-          {
-            role: 'system',
-            content: `Du laver quizzer for elever i klasse ${grade}.`
-          },
-          {
-            role: 'user',
-            content: `Lav en quiz med 3-5 flervalgsspørgsmål baseret på denne historie:\n\n${story.map(chapter => chapter.texts).join("\n\n")}
-            - Returnér **kun** valid JSON som beskrevet.`
-          }
-        ],
-        max_tokens: 500
-      },
-      {
-        headers: { Authorization: `Bearer ${environment.openAIConfig.apiKey}`, 'Content-Type': 'application/json' },
-      }
-    );
-
-    return JSON.parse(response.data.choices[0].message.content.trim());
-  }
-
-  async fetchGoogleImage(searchQuery: string, count: number = 2): Promise<string[]> {
+  async fetchGoogleImage(imageQuery: string, maxImages: number): Promise<string[]> {
     try {
       const response = await axios.get(`https://www.googleapis.com/customsearch/v1`, {
         params: {
-          q: searchQuery,
+          q: `${imageQuery}`,
           searchType: "image",
           cx: environment.googleConfig.cseId,
           key: environment.googleConfig.apiKey,
-          num: 10,
+          num: maxImages,
+          imgSize: "large",
+          imgType: "photo",
+          safe: "high",
+          lr: "lang_en",
         },
       });
 
-      if (!response.data.items || response.data.items.length === 0) {
-        console.warn("No images found from Google Custom Search.");
-        return [];
-      }
-
-      let uniqueImages = new Set<string>();
-
-      for (const item of response.data.items) {
-        const imageUrl = item.link;
-
-        if (!uniqueImages.has(imageUrl) && (await this.isImageAccessible(imageUrl))) {
-          uniqueImages.add(imageUrl);
-        }
-
-        if (uniqueImages.size >= count) break;
-      }
-
-      return Array.from(uniqueImages);
-    } catch (error: any) {
-      console.error("Google Image Search error:", error.response?.data || error);
+      return response.data.items.map((item: any) => item.link);
+    } catch (error) {
+      console.error("Error fetching images:", error);
       return [];
     }
   }
@@ -206,7 +143,34 @@ export class AIService {
       const response = await axios.head(url, { timeout: 5000 });
       return response.status === 200;
     } catch {
-      return false;  // Hvis billedet ikke kan hentes, filtreres det fra
+      return false;  // If the image cannot be loaded, filter it out
+    }
+  }
+
+  private getRoleInstructions(i: number, chapterCount: number): string {
+    if (i === 1) {
+      return `
+        **Dette er kapitel 1 af historien.**
+        - Introducér emnet klart og engagerende.
+        - Giv baggrundsinformation og kontekst.
+        - Forklar vigtige nøglepunkter for at sætte rammen for historien.
+        - Afslut ikke historien her, men forbered læseren på de næste kapitler.
+      `;
+    } else if (i === chapterCount) {
+      return `
+        **Dette er det sidste kapitel i historien.**
+        - Byg videre på tidligere kapitler.
+        - Opsummer vigtige pointer fra tidligere kapitler.
+        - Sørg for en stærk afslutning, der binder det hele sammen.
+      `;
+    } else {
+      return `
+        **Dette er et midterkapitel.**
+        - Byg videre på tidligere kapitler.
+        - Tilføj flere detaljer, forklaringer og eksempler.
+        - Introducér nye relevante fakta, men hold en logisk progression.
+        - Sørg for en naturlig overgang til det næste kapitel.
+      `;
     }
   }
 }

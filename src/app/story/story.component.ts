@@ -124,9 +124,9 @@ export class StoryComponent {
 
   exportToPDF() {
     const margin = 10; // Side margins in mm
-    const pageWidth = 210; // A4 width in mm
-    const pageHeight = 297; // A4 height in mm
-    const doc = new jsPDF('p', 'mm', 'a4'); // Portrait mode
+    const pageWidth = 297; // A4 width in landscape (A4 height in portrait)
+    const pageHeight = 210; // A4 height in landscape (A4 width in portrait)
+    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape mode
 
     const chapters = this.storyContentRef.nativeElement.querySelectorAll('.chapter-container');
 
@@ -135,11 +135,14 @@ export class StoryComponent {
       return;
     }
 
+    // Sanitize fileName to remove unsafe characters
+    const safeFileName = this.inputTopic.replace(/[^a-zA-Z0-9-_ ]/g, "").trim() || "export";
+
     let isFirstPage = true;
 
     const processChapter = async (index: number) => {
       if (index >= chapters.length) {
-        doc.save('story.pdf');
+        doc.save(`${safeFileName}.pdf`);
         return;
       }
 
