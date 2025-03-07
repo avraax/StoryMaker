@@ -2,3 +2,23 @@
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+
+h2 {
+    text-align: center;
+    font-size: 22px;
+    font-weight: bold;
+    color: #2C3E50;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #98D4D4;
+    /* Soft underline */
+    padding-bottom: 10px;
+}
+
+.hidden-dialog .mat-dialog-container {
+    visibility: hidden;
+    opacity: 0;
+    height: 0;
+    width: 0;
+    overflow: hidden;
+  }

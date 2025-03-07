@@ -1,0 +1,33 @@
+<ng-container *ngIf="storyObj">
+    <div class="fullscreen-view">
+        <mat-icon class="close-fullscreen-icon" (click)="closeStoryViewer()">close</mat-icon>
+        <div class="fullscreen-content">
+            <h2>{{ storyObj.title }}</h2>
+            <div #storyContent>
+                <div *ngFor="let chapter of storyObj.chapters; let i = index" class="chapter-container">
+                    <div class="chapter-texts-container">
+                        <h3 class="chapter-title">{{ chapter.title }}</h3>
+                        <div class="chapter-content">
+                            <div class="chapter-layout">
+                                <div class="chapter-texts">
+                                    <p *ngFor="let paragraph of chapter.texts" class="chapter-paragraph">{{ paragraph }}
+                                    </p>
+                                </div>
+
+                                <div class="chapter-images" *ngIf="chapter.images?.length">
+                                    <div class="image-row" *ngFor="let imgChunk of groupImages(chapter.images, 2)">
+                                        <div class="image-wrapper" *ngFor="let img of imgChunk">
+                                            <img [src]="img" class="chapter-image">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button mat-raised-button color="accent" (click)="exportToPDF()">Eksporter til PDF</button>
+    </div>
+</ng-container>

@@ -1,0 +1,124 @@
+:host {
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+
+    .fullscreen-view {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        box-shadow: 0 0 15px #0003;
+
+        /* Disable scrolling on the body when fullscreen is active */
+        &.active {
+            overflow: hidden;
+        }
+
+        .fullscreen-content {
+            width: 80%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            /* Enables vertical scrolling if needed */
+            padding: 20px;
+        }
+
+        mat-icon {
+            height: 34px;
+            width: 34px;
+        }
+
+        .close-fullscreen-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        .close-fullscreen-icon {
+            font-size: 34px;
+            cursor: pointer;
+            color: #333;
+            transition: color 0.3s;
+
+            &:hover {
+                color: #007bff;
+            }
+        }
+    }
+
+    /* 📝 Chapter Titles */
+    .chapter-title {
+        font-size: 22px;
+        font-weight: 400;
+        color: #1565C0;
+        margin-bottom: 10px;
+    }
+
+    .chapter-container {
+        margin-bottom: 40px; // Spacing between chapters
+    }
+
+    .chapter-content {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px; // Space between text and images
+    }
+
+    .chapter-layout {
+        display: flex;
+    }
+
+    .chapter-texts {
+        flex: 1 1 60%; // Takes 60% of the space
+        font-size: 16px;
+        line-height: 1.6;
+    }
+
+    .chapter-images {
+        flex: 1 1 40%; // Takes 40% of the space
+        display: flex;
+        flex-direction: column;
+        padding: 20px 0 0 10px;
+        border-radius: 8px;
+    }
+
+    .image-row {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .image-wrapper {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        max-width: 48%;
+    }
+
+    .chapter-image {
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+    }
+
+    /* Action Buttons */
+    .story-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        background: #f0f8ff;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        margin-top: 20px;
+    }
+}

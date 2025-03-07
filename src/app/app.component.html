@@ -12,6 +12,14 @@
   </div>
 
   <div class="content" *ngIf="user">
-    <app-story *ngIf="user && !showSavedStories" [user]="user"></app-story>
+    <mat-tab-group #tabs [(selectedIndex)]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
+      <mat-tab label="Generér Historie">
+        <app-story [user]="user" (navigateToGenerated)="switchToGeneratedStories()"></app-story>
+      </mat-tab>
+
+      <mat-tab label="Mine Genererede Historier">
+        <app-generated-stories [user]="user"></app-generated-stories>
+      </mat-tab>
+    </mat-tab-group>
   </div>
 </div>

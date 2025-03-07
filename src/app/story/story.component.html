@@ -1,9 +1,9 @@
-<mat-card class="story-container">
+<mat-card class="container">
     <h2 class="section-title">Opret en ny historie</h2>
 
     <mat-form-field appearance="outline" class="full-width">
         <mat-label>Vælg en hovedkategori</mat-label>
-        <mat-select [(ngModel)]="mainCategory" (selectionChange)="updateSubcategories()">
+        <mat-select [disabled]="loading" [(ngModel)]="mainCategory" (selectionChange)="updateSubcategories()">
             <mat-option value="sport">Sport</mat-option>
             <mat-option value="music">Musik</mat-option>
             <mat-option value="science">Videnskab</mat-option>
@@ -11,26 +11,28 @@
             <mat-option value="film">Film & TV</mat-option>
             <mat-option value="nature">Natur & Miljø</mat-option>
             <mat-option value="space">Rummet</mat-option>
-            <mat-option value="other">Andet</mat-option>  <!-- Added "Andet" -->
+            <mat-option value="other">Andet</mat-option> <!-- Added "Andet" -->
         </mat-select>
     </mat-form-field>
-    
+
     <!-- Hide subcategory selection if "Andet" is chosen -->
     <mat-form-field appearance="outline" class="full-width" *ngIf="mainCategory && mainCategory !== 'other'">
         <mat-label>Vælg en underkategori</mat-label>
-        <mat-select [(ngModel)]="subCategory">
+        <mat-select [disabled]="loading" [(ngModel)]="subCategory">
             <mat-option *ngFor="let sub of subcategories" [value]="sub">{{ sub }}</mat-option>
         </mat-select>
     </mat-form-field>
-    
+
     <mat-form-field appearance="outline" class="full-width">
         <mat-label>Indtast specifikt emne</mat-label>
-        <input matInput [(ngModel)]="inputTopic" placeholder="Fx Einstein, The Beatles, eller Romerriget">
-    </mat-form-field>    
+        <input matInput [(ngModel)]="inputTopic" placeholder="Fx Einstein, The Beatles, eller Romerriget"
+            [disabled]="loading" (keydown.enter)="generateStory()">
+    </mat-form-field>
+
 
     <mat-form-field appearance="outline" class="full-width">
         <mat-label>Vælg Klassetrin</mat-label>
-        <mat-select [(ngModel)]="selectedGrade">
+        <mat-select [disabled]="loading" [(ngModel)]="selectedGrade">
             <mat-option *ngFor="let grade of gradeLevels" [value]="grade">Klasse {{ grade }}</mat-option>
         </mat-select>
     </mat-form-field>
@@ -42,66 +44,28 @@
         </button>
     </div>
 
-    <mat-progress-spinner *ngIf="loading" mode="indeterminate" class="loading-spinner"></mat-progress-spinner>
+    @if(loading && totalChapters > 0) {
+    <mat-card class="progress-container">
+        <app-progress-tracker [description]="progressDescription" [totalTasks]="totalChapters + 1"
+            [completedTasks]="progressCompletedTasks">
+        </app-progress-tracker>
+    </mat-card>
+    }
 
-    <mat-card *ngIf="!loading && story.length > 0" class="story-box">
-        <h2>Genereret Historie:</h2>
-        <mat-icon class="fullscreen-icon" (click)="toggleFullscreen()">fullscreen</mat-icon>
+    @if(!loading && chapters.length > 0) {
+    <mat-card class="story-box">
+        <div class="message-container">
+            <p>
+                Historien er genereret og kan findes under
+                <span class="link" (click)="navigateToGenerated.emit(); $event.preventDefault();">Mine Genererede
+                    Historier</span>.
+            </p>
 
-        <!-- Wrapped story content for PDF generation -->
-        <div #storyContentContainer>
-            <ng-container *ngTemplateOutlet="storyContent"></ng-container>
+            <mat-icon class="fullscreen-icon" (click)="openStoryViewer()">fullscreen</mat-icon>
         </div>
     </mat-card>
-
-    <mat-card *ngIf="!loading && story.length > 0" class="story-actions">
-        <div class="action-buttons">
-            <button mat-raised-button color="accent" (click)="exportToPDF()">Eksporter til PDF</button>
-            <!-- <button mat-raised-button color="accent">Gem Historie</button> -->
-        </div>
-
-        <!-- <mat-card *ngIf="previousQuizResult" class="quiz-result">
-            <h3>Tidligere Quizresultat</h3>
-            <p>Du fik {{ previousQuizResult.score }} / {{ previousQuizResult.totalQuestions }} rigtige!</p>
-        </mat-card>
-
-        <button mat-raised-button class="quiz-button" (click)="startQuiz()">Tag Quiz</button> -->
-    </mat-card>
-
-    <app-quiz *ngIf="quizAvailable" [quiz]="quizData" (quizCompleted)="onQuizCompleted($event)"></app-quiz>
+    }
 </mat-card>
-
-<!-- Fullscreen View -->
-<div *ngIf="isFullscreen" class="fullscreen-view">
-    <mat-icon class="close-fullscreen-icon" (click)="toggleFullscreen()">close</mat-icon>
-    <div class="fullscreen-view-content">
-        <ng-container *ngTemplateOutlet="storyContent"></ng-container>
-    </div>
-</div>
-
-<!-- Reusable Story Template -->
-<ng-template #storyContent>
-    <div *ngFor="let chapter of story; let i = index" class="chapter-container">
-        <div class="chapter-texts-container">
-            <h3 class="chapter-title">{{ chapter.title }}</h3>
-            <div class="chapter-content">
-                
-                <!-- Text on 60% and Images on 40% -->
-                <div class="chapter-layout">
-                    <div class="chapter-texts">
-                        <p *ngFor="let paragraph of chapter.texts" class="chapter-paragraph">{{ paragraph }}</p>
-                    </div>
-
-                    <div class="chapter-images" *ngIf="chapter.images?.length">
-                        <div class="image-row" *ngFor="let imgChunk of groupImages(chapter.images, 2)">
-                            <div class="image-wrapper" *ngFor="let img of imgChunk">
-                                <img [src]="img" class="chapter-image">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
-</ng-template>
+@if(showStoryViewer) {
+<app-story-viewer [story]="generatedStory" (close)="closeStoryViewer()"></app-story-viewer>
+}

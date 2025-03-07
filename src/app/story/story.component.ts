@@ -1,5 +1,5 @@
-import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
-import { Auth, User, user } from '@angular/fire/auth';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { User } from '@angular/fire/auth';
 import { AIService } from './../services/ai.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,11 +8,16 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { CommonModule } from '@angular/common';
-import { QuizComponent } from './../quiz/quiz.component';
 import { FormsModule } from '@angular/forms';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import { FirestoreService } from '../services/firestore.service';
+import { StoryChapter } from '../models/story-chapter';
+import { FireStoreStory } from '../models/firestore-story';
+import { ProgressTrackerComponent } from '../progress-tracker/progress-tracker.component';
+import { StoryUtilsService } from '../services/story-utils.service';
+import { StoryViewerComponent } from '../story-viewer/story-viewer.component';
+import { BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'app-story',
@@ -25,31 +30,34 @@ import html2canvas from 'html2canvas';
     MatFormFieldModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    MatProgressBarModule,
     MatIconModule,
-    QuizComponent,
-    FormsModule
+    ProgressTrackerComponent,
+    FormsModule,
+    StoryViewerComponent
   ],
   templateUrl: "story.component.html",
   styleUrls: ["story.component.scss"]
 })
 
-export class StoryComponent {
-  @ViewChild('storyContentContainer', { static: false }) storyContentRef!: ElementRef;
+export class StoryComponent implements OnInit, OnDestroy {
+  @Output() navigateToGenerated = new EventEmitter<void>(); // Opret event
   @Input() user: User | undefined;
+  generatedStory = new BehaviorSubject<FireStoreStory | null>(null);
   mainCategory: string = 'sport';
   subCategory: string = 'Spillere';
   inputTopic: string = '';
   selectedGrade: number = 4;
-  story: { title: string, texts: string[], images: string[], imageQuery: string }[] = [];
-  quizData: any;
-  quizAvailable: boolean = false;
-  previousQuizResult: any;
+  chapters: StoryChapter[] = [];
   loading: boolean = false;
-  isFullscreen = false;
+  showStoryViewer: boolean = false;
 
+  generatedChapters: number = 0;
+  totalChapters: number = 0;
+  progressDescription: string | null = null;
+  progressCompletedTasks: number = 0;
 
   subcategories: string[] = [];
-
   sportSubcategories = ['Spillere', 'Trænere', 'Klubber', 'Historiske Øjeblikke'];
   musicSubcategories = ['Kunstnere', 'Bands', 'Musikgenrer', 'Historiske Koncerter'];
   scienceSubcategories = ['Opfindelser', 'Forskere', 'Naturvidenskab', 'Teknologi'];
@@ -60,10 +68,20 @@ export class StoryComponent {
 
   gradeLevels = Array.from({ length: 11 }, (_, i) => i); // 0.-10. klasse
 
-  constructor(private aiService: AIService, private auth: Auth) { }
+  constructor(private aiService: AIService, private firestoreService: FirestoreService, public storyUtils: StoryUtilsService) { }
 
   ngOnInit() {
     this.updateSubcategories(); // Opdater underkategorier baseret på den valgte hovedkategori
+
+    this.generatedStory.subscribe((story) => {
+      if (story && story.chapters && story.chapters.length > 0) {
+        this.saveGeneratedStory(story);
+      }
+    })
+  }
+
+  ngOnDestroy(): void {
+    this.generatedStory.unsubscribe();
   }
 
   updateSubcategories() {
@@ -88,99 +106,51 @@ export class StoryComponent {
     if (!this.inputTopic || !this.selectedGrade) {
       return;
     }
-
+    this.generatedStory.next(null);
+    this.progressCompletedTasks = 0;
+    this.chapters = [];
+    this.generatedChapters = 0;
     this.loading = true;
-    this.story = await this.aiService.generateStory(this.mainCategory, this.subCategory, this.inputTopic, this.selectedGrade);
+    this.totalChapters = await this.aiService.getTotalChapters();
 
+    this.progressDescription = `genererer kapitler`;
+    // Using async generator method
+    for await (let chapter of this.aiService.generateStoryStream(this.mainCategory, this.subCategory, this.inputTopic, this.selectedGrade)) {
+      this.chapters.push(chapter); // Update story dynamically
+      this.generatedChapters++; // Update progress bar
+      this.progressCompletedTasks++;
+
+      if (this.generatedChapters >= this.progressCompletedTasks) {
+        this.progressDescription = `gemmer genereret histore`;
+      }
+    }
+
+    this.generatedStory.next({
+      title: this.inputTopic,
+      chapters: this.chapters,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    this.progressCompletedTasks++;
     this.loading = false;
   }
 
-  async startQuiz() {
-    // this.quizData = await this.aiService.generateQuiz(this.story, this.selectedGrade);
-
-    // var currentUser = this.auth.currentUser as User;
-    // const savedQuizResult = await this.firestoreService.getQuizResult(currentUser.uid, this.story[0].texts);
-    // if (savedQuizResult) {
-    //   this.previousQuizResult = savedQuizResult;
-    // }
-    this.quizAvailable = true;
+  public openStoryViewer() {
+    this.showStoryViewer = true;
   }
 
-  toggleFullscreen() {
-    this.isFullscreen = !this.isFullscreen;
+  closeStoryViewer() {
+    this.showStoryViewer = false;
+  }
 
-    if (this.isFullscreen) {
-      document.body.style.overflow = 'hidden'; // Disable page scrolling
-    } else {
-      document.body.style.overflow = ''; // Restore default scrolling
+  async saveGeneratedStory(story: FireStoreStory | undefined | null) {
+    if (!this.user || !story) return;
+
+    try {
+      await this.firestoreService.saveGeneratedStory(this.user.uid, story);
+    } catch (error) {
+      console.error("Error saving story:", error);
     }
-  }
-
-  async onQuizCompleted(result: { score: number; totalQuestions: number }) {
-    // if (!this.user) return;
-    // await this.firestoreService.saveQuizResult(this.user.uid, this.story[0].texts, result.score, result.totalQuestions);
-    // this.previousQuizResult = result;
-  }
-
-  exportToPDF() {
-    const margin = 10; // Side margins in mm
-    const pageWidth = 297; // A4 width in landscape (A4 height in portrait)
-    const pageHeight = 210; // A4 height in landscape (A4 width in portrait)
-    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape mode
-
-    const chapters = this.storyContentRef.nativeElement.querySelectorAll('.chapter-container');
-
-    if (!chapters.length) {
-      console.error("No chapters found for export!");
-      return;
-    }
-
-    // Sanitize fileName to remove unsafe characters
-    const safeFileName = this.inputTopic.replace(/[^a-zA-Z0-9-_ ]/g, "").trim() || "export";
-
-    let isFirstPage = true;
-
-    const processChapter = async (index: number) => {
-      if (index >= chapters.length) {
-        doc.save(`${safeFileName}.pdf`);
-        return;
-      }
-
-      const chapter = chapters[index] as HTMLElement;
-
-      try {
-        const canvas = await html2canvas(chapter, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: null,
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-        const imgWidth = pageWidth - 2 * margin; // Adjust width for margins
-        const imgHeight = (canvas.height * imgWidth) / canvas.width; // Maintain aspect ratio
-
-        if (!isFirstPage) {
-          doc.addPage(); // Add a new page for each chapter
-        }
-
-        doc.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
-
-        isFirstPage = false; // Ensure new pages are added after the first
-
-        await processChapter(index + 1); // Process the next chapter recursively
-      } catch (error) {
-        console.error("Error processing chapter:", error);
-      }
-    };
-
-    processChapter(0); // Start processing chapters
-  }
-
-  groupImages(images: string[], chunkSize: number): string[][] {
-    const groupedImages: string[][] = [];
-    for (let i = 0; i < images.length; i += chunkSize) {
-      groupedImages.push(images.slice(i, i + chunkSize));
-    }
-    return groupedImages;
   }
 }

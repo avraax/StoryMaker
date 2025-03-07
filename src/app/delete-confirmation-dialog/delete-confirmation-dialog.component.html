@@ -1,0 +1,10 @@
+<div class="container">
+    <h2 mat-dialog-title>Bekræft sletning</h2>
+    <mat-dialog-content>
+        <p>Er du sikker på, at du vil slette historien <strong>{{ data.storyTitle }}</strong>?</p>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-button (click)="onCancel()">Annuller</button>
+        <button mat-button color="warn" (click)="onConfirm()">Slet</button>
+    </mat-dialog-actions>
+</div>

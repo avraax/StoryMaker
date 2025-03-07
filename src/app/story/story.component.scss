@@ -1,189 +1,78 @@
-/* 🌟 General Page Styling */
 :host {
     max-width: 1000px;
     width: 1000px;
     display: inline-block;
-}
 
-/* 🎨 Story Container */
-.story-container {
-    margin: auto;
-    padding: 30px;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-
-    .close-fullscreen {
-        position: absolute;
-        top: 10px;
-        right: 10px;
+    .container {
+        margin: auto;
+        padding: 15px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
-}
 
-
-.fullscreen-icon,
-.close-fullscreen-icon {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    cursor: pointer;
-    font-size: 24px;
-    color: #333;
-    transition: color 0.3s;
-
-    &:hover {
-        color: #007bff;
+    /* 🔄 Loading Spinner (Now Centered) */
+    .loading-spinner {
+        display: block;
+        margin: 20px auto;
+        animation: fadeIn 0.5s ease-in-out;
     }
-}
 
-.fullscreen-view {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-
-    /* Disable scrolling on the body when fullscreen is active */
-    &.active {
-        overflow: hidden;
+    .story-box .message-container {
+        mat-icon {
+            height: 34px;
+            width: 34px;
+        }
     }
-}
 
-.fullscreen-view-content {
-    width: 80%;
-    max-width: 800px;
-    max-height: 90vh;
-    overflow-y: auto;
-    /* Enables vertical scrolling if needed */
-    padding: 20px;
-}
+    /* 📖 Story Box (With Single Shadow) */
+    .story-box {
+        background: #FFFFFF;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        margin-top: 20px;
+        padding: 15px;
+        background: #f3f3f3;
+        text-align: center;
+        font-size: 18px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
 
-/* 🟣 Section Titles */
-.section-title {
-    text-align: center;
-    font-size: 22px;
-    font-weight: bold;
-    color: #2C3E50;
-    margin-bottom: 20px;
-    border-bottom: 2px solid #98D4D4;
-    /* Soft underline */
-    padding-bottom: 10px;
-}
+        .message-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            align-items: center;
+        }
+    }
 
-/* 🔄 Loading Spinner (Now Centered) */
-.loading-spinner {
-    display: block;
-    margin: 20px auto;
-    animation: fadeIn 0.5s ease-in-out;
-}
+    .progress-container {
+        margin: 10px 0;
+        padding: 10px;
+        text-align: center;
+    }
 
-/* 📖 Story Box (With Single Shadow) */
-.story-box {
-    background: #FFFFFF;
-    padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
-    /* Softer shadow */
-    margin-top: 30px;
-}
+    .link {
+        cursor: pointer;
+        text-decoration: underline;
+    }
 
-/* 📝 Chapter Titles */
-.chapter-title {
-    font-size: 22px;
-    font-weight: 400;
-    color: #1565C0;
-    margin-bottom: 10px;
-}
+    .fullscreen-icon {
+        font-size: 34px;
+        cursor: pointer;
+        color: #333;
+        transition: color 0.3s;
 
-.chapter-container {
-    margin-bottom: 40px; // Spacing between chapters
-}
+        &:hover {
+            color: #007bff;
+        }
+    }
 
-.chapter-content {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px; // Space between text and images
-}
-
-.chapter-layout {
-    display: flex;
-}
-
-.chapter-texts {
-    flex: 1 1 60%; // Takes 60% of the space
-    font-size: 16px;
-    line-height: 1.6;
-}
-
-.chapter-images {
-    flex: 1 1 40%; // Takes 40% of the space
-    display: flex;
-    flex-direction: column;
-    padding: 20px 0 0 10px;
-    border-radius: 8px;
-}
-
-.image-row {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.image-wrapper {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    max-width: 48%;
-}
-
-.chapter-image {
-    width: 100%;
-    height: auto;
-    object-fit: contain;
-}
-
-/* Action Buttons */
-.story-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    background: #f0f8ff;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
-    margin-top: 20px;
-}
-
-.action-buttons {
-    display: flex;
-    gap: 15px;
-}
-
-button {
-    font-size: 16px;
-    font-weight: bold;
-    padding: 12px 20px;
-    border-radius: 25px;
-    transition: all 0.3s ease-in-out;
-}
-
-button:hover {
-    background: #71c9ce;
-    transform: scale(1.05);
-}
-
-.quiz-button {
-    margin-top: 20px;
-    background-color: #ffd700 !important;
-    color: #333 !important;
+    mat-progress-bar {
+        width: 100%;
+        margin-bottom: 5px;
+    }
 }
 
 /* 🎞️ Fade-in Animation */
