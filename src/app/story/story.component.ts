@@ -43,7 +43,7 @@ import { BehaviorSubject } from 'rxjs';
 export class StoryComponent implements OnInit, OnDestroy {
   @Output() navigateToGenerated = new EventEmitter<void>(); // Opret event
   @Input() user: User | undefined;
-  generatedStory = new BehaviorSubject<FireStoreStory | null>(null);
+  story = new BehaviorSubject<FireStoreStory | null>(null);
   mainCategory: string = 'sport';
   subCategory: string = 'Spillere';
   inputTopic: string = '';
@@ -73,15 +73,15 @@ export class StoryComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.updateSubcategories(); // Opdater underkategorier baseret på den valgte hovedkategori
 
-    this.generatedStory.subscribe((story) => {
+    this.story.subscribe((story) => {
       if (story && story.chapters && story.chapters.length > 0) {
-        this.saveGeneratedStory(story);
+        this.saveStory(story);
       }
     })
   }
 
   ngOnDestroy(): void {
-    this.generatedStory.unsubscribe();
+    this.story.unsubscribe();
   }
 
   updateSubcategories() {
@@ -106,34 +106,48 @@ export class StoryComponent implements OnInit, OnDestroy {
     if (!this.inputTopic || !this.selectedGrade) {
       return;
     }
-    this.generatedStory.next(null);
-    this.progressCompletedTasks = 0;
-    this.chapters = [];
-    this.generatedChapters = 0;
-    this.loading = true;
-    this.totalChapters = await this.aiService.getTotalChapters();
+    this.story.next(null);
+    this.reset();
+    this.totalChapters = this.aiService.totalChapters;
 
     this.progressDescription = `genererer kapitler`;
-    // Using async generator method
-    for await (let chapter of this.aiService.generateStoryStream(this.mainCategory, this.subCategory, this.inputTopic, this.selectedGrade)) {
-      this.chapters.push(chapter); // Update story dynamically
-      this.generatedChapters++; // Update progress bar
-      this.progressCompletedTasks++;
 
-      if (this.generatedChapters >= this.progressCompletedTasks) {
-        this.progressDescription = `gemmer genereret histore`;
+    try {
+      // Using async generator method
+      for await (let chapter of this.aiService.generateStoryStream(this.mainCategory, this.subCategory, this.inputTopic, this.selectedGrade)) {
+        this.chapters.push(chapter); // Update story dynamically
+        this.generatedChapters++; // Update progress bar
+        this.progressCompletedTasks++;
+
+        if (this.generatedChapters >= this.progressCompletedTasks) {
+          this.progressDescription = `gemmer genereret histore`;
+        }
       }
-    }
 
-    this.generatedStory.next({
-      title: this.inputTopic,
-      chapters: this.chapters,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
+      this.story.next({
+        title: this.inputTopic,
+        chapters: this.chapters,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+    } catch (error) {
+      this.reset();
+      console.error('error generating story', error);
+      throw error;
+    }
 
     this.progressCompletedTasks++;
     this.loading = false;
+  }
+
+  private reset(): void {
+    this.story.next(null);
+    this.progressCompletedTasks = 0;
+    this.progressDescription = '';
+    this.chapters = [];
+    this.generatedChapters = 0;
+    this.loading = true;
   }
 
   public openStoryViewer() {
@@ -144,11 +158,11 @@ export class StoryComponent implements OnInit, OnDestroy {
     this.showStoryViewer = false;
   }
 
-  async saveGeneratedStory(story: FireStoreStory | undefined | null) {
+  async saveStory(story: FireStoreStory | undefined | null) {
     if (!this.user || !story) return;
 
     try {
-      await this.firestoreService.saveGeneratedStory(this.user.uid, story);
+      await this.firestoreService.saveStory(this.user.uid, story);
     } catch (error) {
       console.error("Error saving story:", error);
     }

@@ -8,8 +8,6 @@ import { StoryViewerComponent } from '../story-viewer/story-viewer.component';
   providedIn: 'root'
 })
 export class StoryUtilsService {
-  selectedStory: FireStoreStory | null = null;
-
   exportToPDF(story: FireStoreStory | null, storyContentElement: HTMLElement) {
     if (!story || !storyContentElement) {
       console.error("Story or storyContentElement is missing.");

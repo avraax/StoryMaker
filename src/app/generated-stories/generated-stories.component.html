@@ -1,7 +1,7 @@
 <mat-card class="container">
   <h2>Mine Genererede Historier</h2>
 
-  <table mat-table [dataSource]="generatedStories" class="mat-elevation-z2">
+  <table mat-table [dataSource]="stories" class="mat-elevation-z2">
 
     <!-- Title Column -->
     <ng-container matColumnDef="title">
@@ -24,9 +24,6 @@
         <button mat-icon-button color="warn" (click)="confirmDelete(story.id, story.title)">
           <mat-icon>delete</mat-icon>
         </button>
-        <button mat-icon-button color="accent" (click)="exportToPDF()">
-          <mat-icon>picture_as_pdf</mat-icon>
-        </button>
         <button mat-icon-button color="primary" (click)="openStoryViewer(story)">
           <mat-icon>fullscreen</mat-icon>
         </button>
@@ -39,7 +36,7 @@
 
   </table>
 
-  <p *ngIf="generatedStories.length === 0" class="no-stories">
+  <p *ngIf="stories.length === 0" class="no-stories">
     Ingen historier genereret endnu.
   </p>
 </mat-card>

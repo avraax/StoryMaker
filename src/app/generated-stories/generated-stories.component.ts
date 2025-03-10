@@ -7,7 +7,6 @@ import { MatListModule } from '@angular/material/list';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
-import { StoryUtilsService } from '../services/story-utils.service';
 import { StoryViewerComponent } from '../story-viewer/story-viewer.component';
 import { BehaviorSubject } from 'rxjs';
 import { Timestamp } from 'firebase/firestore';
@@ -33,16 +32,15 @@ import { DeleteConfirmationDialogComponent } from '../delete-confirmation-dialog
 })
 export class GeneratedStoriesComponent implements OnInit, OnDestroy {
   @Input() user: User | undefined;
-  generatedStories: FireStoreStory[] = [];
+  stories: FireStoreStory[] = [];
   public selectedStory = new BehaviorSubject<FireStoreStory | null>(null);
 
-  constructor(private firestoreService: FirestoreService,
-    public storyUtils: StoryUtilsService, private dialog: MatDialog) { }
+  constructor(private firestoreService: FirestoreService, private dialog: MatDialog) { }
 
   ngOnInit() {
     if (this.user) {
-      this.firestoreService.getGeneratedStories(this.user.uid).subscribe(stories => {
-        this.generatedStories = stories.map(story => ({
+      this.firestoreService.getStories(this.user.uid).subscribe(stories => {
+        this.stories = stories.map(story => ({
           ...story,
           updatedAt: story.updatedAt instanceof Timestamp
             ? new Date(story.updatedAt.seconds * 1000) // Convert Firestore Timestamp to JavaScript Date
@@ -71,21 +69,13 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
 
   async deleteStory(storyId: string | undefined) {
     if (this.user && storyId) {
-      await this.firestoreService.deleteGeneratedStory(this.user.uid, storyId);
-      this.generatedStories = this.generatedStories.filter(story => story.id !== storyId);
+      await this.firestoreService.deleteStory(this.user.uid, storyId);
+      this.stories = this.stories.filter(story => story.id !== storyId);
     }
   }
 
   public openStoryViewer(story: FireStoreStory) {
     this.selectedStory.next(story);
-  }
-
-  exportToPDF() {
-    // if (this.storyContentRef?.nativeElement && this.storyObj) {
-    //   this.storyUtils.exportToPDF(this.storyObj, this.storyContentRef.nativeElement);
-    // } else {
-    //   console.error("storyContentRef is not yet available.");
-    // }
   }
 
   closeStoryViewer() {

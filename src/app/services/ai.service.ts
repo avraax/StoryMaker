@@ -2,21 +2,17 @@ import { Injectable } from '@angular/core';
 import axios from 'axios';
 import { environment } from '../../environments/environment';
 import { StoryChapter } from '../models/story-chapter';
+import { ImageService } from './image.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AIService {
-
   totalChapters: number = 1;
   maxStoryTokens: number = 500;
   imagesPerChapter: number = 1;
 
-  getTotalChapters(): Promise<number> {
-    return Promise.resolve(this.totalChapters);
-  }
-
-  constructor() { }
+  constructor(private imageService: ImageService) { }
 
   async *generateStoryStream(
     mainCategory: string,
@@ -26,7 +22,7 @@ export class AIService {
   ): AsyncGenerator<StoryChapter, void, unknown> {
 
     const maxWords = Math.floor(this.maxStoryTokens * 0.75);
-    let storySoFar = ""; // Keeps track of previous chapters
+    let storySoFar = "";
 
     for (let i = 1; i <= this.totalChapters; i++) {
       let roleInstructions = this.getRoleInstructions(i, this.totalChapters);
@@ -58,7 +54,7 @@ export class AIService {
               content: `
                 Generér **kapitel ${i}** af en faktuel historie om **${topic}**${mainCategory !== 'other' ? ` inden for **${subCategory}** i **${mainCategory}**` : ''}.
                 Historien skal være sammenhængende og fortsætte fra tidligere kapitler.
-                ${i > 1 ? `🔹 **Resumé af historien indtil nu:** ${storySoFar}` : ''}
+                ${i > 1 ? `🔹 **Resumé af historien indtil nu:** ${storySoFar}` : ''} 
                 - ${roleInstructions}
                 - Returnér **kun** valid JSON som beskrevet.
               `.trim()
@@ -87,77 +83,14 @@ export class AIService {
         throw new Error("AI-returneret JSON mangler nødvendige felter.");
       }
 
-      let images = await this.fetchImages(newChapter.imageQuery, this.imagesPerChapter);
+      let images = await this.imageService.fetchImages(newChapter.imageQuery, this.imagesPerChapter);
       newChapter.images = images;
 
       storySoFar += `\nKapitel ${i}: ${newChapter.title}\n${newChapter.texts.join(" ")}\n`;
 
-      yield newChapter; // Yield each chapter after generation
+      yield newChapter; 
 
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate delay
-    }
-  }
-
-  async fetchImages(imageQuery: string, maxImages: number): Promise<string[]> {
-    let images: string[] = [];
-
-    const googleImages = await this.fetchGoogleImage(imageQuery, maxImages);
-    if (googleImages && googleImages.length > 0) {
-      for (const imgUrl of googleImages) {
-        const base64Image = await this.convertImageToBase64(imgUrl);
-        if (base64Image) {
-          images.push(base64Image);
-        }
-      }
-    }
-
-    return images;
-  }
-
-  async convertImageToBase64(imageUrl: string): Promise<string | null> {
-    try {
-      const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`);
-      const blob = await response.blob();
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
-      });
-    } catch (error) {
-      console.error("Error converting image to base64:", error);
-      return null;
-    }
-  }
-
-  async fetchGoogleImage(imageQuery: string, maxImages: number): Promise<string[]> {
-    try {
-      const response = await axios.get(`https://www.googleapis.com/customsearch/v1`, {
-        params: {
-          q: `${imageQuery}`,
-          searchType: "image",
-          cx: environment.googleConfig.cseId,
-          key: environment.googleConfig.apiKey,
-          num: maxImages,
-          imgSize: "large",
-          imgType: "photo",
-          safe: "high",
-          lr: "lang_en",
-        },
-      });
-
-      return response.data.items.map((item: any) => item.link);
-    } catch (error) {
-      console.error("Error fetching images:", error);
-      return [];
-    }
-  }
-
-  async isImageAccessible(url: string): Promise<boolean> {
-    try {
-      const response = await axios.head(url, { timeout: 5000 });
-      return response.status === 200;
-    } catch {
-      return false;  // If the image cannot be loaded, filter it out
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
 
