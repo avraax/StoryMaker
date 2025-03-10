@@ -40,5 +40,6 @@
     Ingen historier genereret endnu.
   </p>
 </mat-card>
-
+@if(selectedStory | async) {
 <app-story-viewer [story]="selectedStory" (close)="closeStoryViewer()"></app-story-viewer>
+}

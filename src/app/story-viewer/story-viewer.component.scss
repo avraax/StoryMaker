@@ -1,7 +1,10 @@
 :host {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100vw;
-    display: flex;
-    justify-content: center;
+    height: 100vh;
+    background: #fff;
 
     .fullscreen-view {
         position: fixed;
@@ -11,24 +14,39 @@
         height: 100vh;
         background: #fff;
         display: flex;
-        flex-direction: column;
         justify-content: center;
         align-items: center;
         z-index: 1000;
-        box-shadow: 0 0 15px #0003;
 
-        /* Disable scrolling on the body when fullscreen is active */
-        &.active {
+        .ipad-container {
+            width: 1024px;
+            height: 768px;
+            background: white;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
+            padding: 20px;
         }
 
         .fullscreen-content {
-            width: 80%;
-            max-width: 800px;
-            max-height: 90vh;
-            overflow-y: auto;
-            /* Enables vertical scrolling if needed */
-            padding: 20px;
+            width: 100%;
+            height: 100%;
+            overflow-y: hidden;
+        }
+
+        .pagination-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding: 10px 0;
+            align-items: center;
+        }
+
+        .page-indicator {
+            font-size: 18px;
+            font-weight: bold;
         }
 
         mat-icon {
@@ -40,9 +58,6 @@
             position: absolute;
             top: 10px;
             right: 10px;
-        }
-
-        .close-fullscreen-icon {
             font-size: 34px;
             cursor: pointer;
             color: #333;
@@ -54,22 +69,21 @@
         }
     }
 
-    /* 📝 Chapter Titles */
     .chapter-title {
-        font-size: 22px;
-        font-weight: 400;
+        font-size: 24px; // Adjusted for iPad readability
+        font-weight: 500;
         color: #1565C0;
         margin-bottom: 10px;
     }
 
     .chapter-container {
-        margin-bottom: 40px; // Spacing between chapters
+        margin-bottom: 30px;
     }
 
     .chapter-content {
         display: flex;
         justify-content: space-between;
-        gap: 20px; // Space between text and images
+        gap: 20px;
     }
 
     .chapter-layout {
@@ -77,13 +91,13 @@
     }
 
     .chapter-texts {
-        flex: 1 1 60%; // Takes 60% of the space
-        font-size: 16px;
-        line-height: 1.6;
+        flex: 1 1 60%;
+        font-size: 18px; // Improved readability
+        line-height: 1.8;
     }
 
     .chapter-images {
-        flex: 1 1 40%; // Takes 40% of the space
+        flex: 1 1 40%;
         display: flex;
         flex-direction: column;
         padding: 20px 0 0 10px;
@@ -108,9 +122,9 @@
         width: 100%;
         height: auto;
         object-fit: contain;
+        border-radius: 5px;
     }
 
-    /* Action Buttons */
     .story-actions {
         display: flex;
         flex-direction: column;

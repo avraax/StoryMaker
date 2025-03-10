@@ -19,18 +19,20 @@ export class StoryViewerComponent implements OnInit {
   @Output() close = new EventEmitter<void>();
   @ViewChild('storyContent', { static: false }) storyContentRef!: ElementRef;
 
+  currentPageIndex: number = 0; // Track current page index
+
   constructor(public storyUtils: StoryUtilsService) { }
 
   ngOnInit() {
     this.story.subscribe((story) => {
       this.storyObj = story;
+      this.currentPageIndex = 0; // Reset to first page
       if (this.storyObj) {
         document.body.style.overflow = 'hidden';
-      }
-      else {
+      } else {
         document.body.style.overflow = '';
       }
-    })
+    });
   }
 
   closeStoryViewer() {
@@ -52,5 +54,18 @@ export class StoryViewerComponent implements OnInit {
       groupedImages.push(images.slice(i, i + chunkSize));
     }
     return groupedImages;
+  }
+
+  // 🔹 Pagination Controls
+  nextPage() {
+    if (this.storyObj && this.currentPageIndex < this.storyObj.chapters.length - 1) {
+      this.currentPageIndex++;
+    }
+  }
+
+  previousPage() {
+    if (this.currentPageIndex > 0) {
+      this.currentPageIndex--;
+    }
   }
 }

@@ -1,33 +1,53 @@
 <ng-container *ngIf="storyObj">
     <div class="fullscreen-view">
-        <mat-icon class="close-fullscreen-icon" (click)="closeStoryViewer()">close</mat-icon>
-        <div class="fullscreen-content">
-            <h2>{{ storyObj.title }}</h2>
-            <div #storyContent>
-                <div *ngFor="let chapter of storyObj.chapters; let i = index" class="chapter-container">
-                    <div class="chapter-texts-container">
-                        <h3 class="chapter-title">{{ chapter.title }}</h3>
-                        <div class="chapter-content">
-                            <div class="chapter-layout">
-                                <div class="chapter-texts">
-                                    <p *ngFor="let paragraph of chapter.texts" class="chapter-paragraph">{{ paragraph }}
-                                    </p>
-                                </div>
-
-                                <div class="chapter-images" *ngIf="chapter.images?.length">
-                                    <div class="image-row" *ngFor="let imgChunk of groupImages(chapter.images, 2)">
-                                        <div class="image-wrapper" *ngFor="let img of imgChunk">
-                                            <img [src]="img" class="chapter-image">
+        <div class="ipad-container">
+            <mat-icon class="close-fullscreen-icon" (click)="closeStoryViewer()">close</mat-icon>
+            <div class="fullscreen-content">
+                <h2>{{ storyObj.title }}</h2>
+                <div #storyContent>
+                    <div *ngIf="storyObj.chapters.length">
+                        <div class="chapter-container">
+                            <div class="chapter-texts-container">
+                                <h3 class="chapter-title">{{ storyObj.chapters[currentPageIndex].title }}</h3>
+                                <div class="chapter-content">
+                                    <div class="chapter-layout">
+                                        <div class="chapter-texts">
+                                            <p *ngFor="let paragraph of storyObj.chapters[currentPageIndex].texts" 
+                                               class="chapter-paragraph">
+                                                {{ paragraph }}
+                                            </p>
+                                        </div>
+                                        <div class="chapter-images" 
+                                             *ngIf="storyObj.chapters[currentPageIndex].images?.length">
+                                            <div class="image-row" 
+                                                 *ngFor="let imgChunk of groupImages(storyObj.chapters[currentPageIndex].images, 2)">
+                                                <div class="image-wrapper" *ngFor="let img of imgChunk">
+                                                    <img [src]="img" class="chapter-image">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Pagination Controls -->
+            <div class="pagination-controls">
+                <button mat-raised-button color="primary" (click)="previousPage()" 
+                        [disabled]="currentPageIndex === 0">
+                    Previous
+                </button>
+                <span class="page-indicator">{{ currentPageIndex + 1 }} / {{ storyObj.chapters.length }}</span>
+                <button mat-raised-button color="primary" (click)="nextPage()" 
+                        [disabled]="currentPageIndex === storyObj.chapters.length - 1">
+                    Next
+                </button>
+            </div>
+
+            <button mat-raised-button color="accent" (click)="exportToPDF()">Eksporter til PDF</button>
         </div>
-        <button mat-raised-button color="accent" (click)="exportToPDF()">Eksporter til PDF</button>
     </div>
 </ng-container>

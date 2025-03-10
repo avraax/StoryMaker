@@ -1,3 +1,4 @@
+@if(!showStoryViewer) {
 <mat-card class="container">
     <h2 class="section-title">Opret en ny historie</h2>
 
@@ -66,6 +67,7 @@
     </mat-card>
     }
 </mat-card>
+}
 @if(showStoryViewer) {
 <app-story-viewer [story]="story" (close)="closeStoryViewer()"></app-story-viewer>
 }

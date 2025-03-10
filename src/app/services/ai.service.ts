@@ -8,9 +8,9 @@ import { ImageService } from './image.service';
   providedIn: 'root',
 })
 export class AIService {
-  totalChapters: number = 1;
-  maxStoryTokens: number = 500;
-  imagesPerChapter: number = 1;
+  totalChapters: number = 3;
+  maxStoryTokens: number = 1000;
+  imagesPerChapter: number = 2;
 
   constructor(private imageService: ImageService) { }
 
