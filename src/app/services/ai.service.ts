@@ -9,7 +9,7 @@ import { ImageService } from './image.service';
 })
 export class AIService {
   totalChapters: number = 10;
-  maxStoryTokens: number = 1400;
+  maxStoryTokens: number = 1000;
   imagesPerChapter: number = 4;
 
   constructor(private imageService: ImageService) { }
