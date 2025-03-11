@@ -13,11 +13,11 @@
 
   <div class="content" *ngIf="user">
     <mat-tab-group #tabs [(selectedIndex)]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
-      <mat-tab label="Generér Historie">
+      <mat-tab label="Opret Historie">
         <app-story [user]="user" (navigateToGenerated)="switchToGeneratedStories()"></app-story>
       </mat-tab>
 
-      <mat-tab label="Mine Genererede Historier">
+      <mat-tab label="Mine Historier">
         <app-generated-stories [user]="user"></app-generated-stories>
       </mat-tab>
     </mat-tab-group>

@@ -1,6 +1,5 @@
 <mat-card class="container">
-  <h2>Mine Genererede Historier</h2>
-
+  <h2>Oversigt over Mine Historier</h2>
   <table mat-table [dataSource]="stories" class="mat-elevation-z2">
 
     <!-- Title Column -->
@@ -37,7 +36,7 @@
   </table>
 
   <p *ngIf="stories.length === 0" class="no-stories">
-    Ingen historier genereret endnu.
+    Ingen historier endnu.
   </p>
 </mat-card>
 @if(selectedStory | async) {

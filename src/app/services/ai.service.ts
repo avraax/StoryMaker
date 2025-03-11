@@ -8,9 +8,9 @@ import { ImageService } from './image.service';
   providedIn: 'root',
 })
 export class AIService {
-  totalChapters: number = 3;
-  maxStoryTokens: number = 1000;
-  imagesPerChapter: number = 2;
+  totalChapters: number = 10;
+  maxStoryTokens: number = 1400;
+  imagesPerChapter: number = 4;
 
   constructor(private imageService: ImageService) { }
 
@@ -19,10 +19,11 @@ export class AIService {
     subCategory: string,
     topic: string,
     grade: number
-  ): AsyncGenerator<StoryChapter, void, unknown> {
+  ): AsyncGenerator<StoryChapter | { description: string; image: string }, void, unknown> {
 
     const maxWords = Math.floor(this.maxStoryTokens * 0.75);
     let storySoFar = "";
+    const chapters: StoryChapter[] = [];
 
     for (let i = 1; i <= this.totalChapters; i++) {
       let roleInstructions = this.getRoleInstructions(i, this.totalChapters);
@@ -54,9 +55,12 @@ export class AIService {
               content: `
                 Generér **kapitel ${i}** af en faktuel historie om **${topic}**${mainCategory !== 'other' ? ` inden for **${subCategory}** i **${mainCategory}**` : ''}.
                 Historien skal være sammenhængende og fortsætte fra tidligere kapitler.
-                ${i > 1 ? `🔹 **Resumé af historien indtil nu:** ${storySoFar}` : ''} 
+                
+                ${i > 1 ? `🔹 **Resumé af historien indtil nu:**\n\`\`\`json\n${JSON.stringify(storySoFar)}\n\`\`\`` : ''} 
+                
                 - ${roleInstructions}
                 - Returnér **kun** valid JSON som beskrevet.
+                - **Sørg for, at teksten er velstruktureret og korrekt escape'et.**
               `.trim()
             }
           ],
@@ -88,9 +92,88 @@ export class AIService {
 
       storySoFar += `\nKapitel ${i}: ${newChapter.title}\n${newChapter.texts.join(" ")}\n`;
 
-      yield newChapter; 
+      chapters.push(newChapter); // Store chapters for later metadata generation
+      yield newChapter; // Yield each chapter in the stream
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    // 🔹 Generate metadata after all chapters have been created
+    const metadata = await this.generateStoryMetadata(topic, storySoFar, grade);
+    const coverImages = await this.imageService.fetchImages(topic, 5);
+    const coverImage = coverImages.find(img => img.startsWith("data:image")) || "";
+
+    yield {
+      description: metadata.description,
+      image: coverImage
+    };
+  }
+
+
+  async generateStoryMetadata(storyTitle: string, storySoFar: string, grade: number): Promise<{ description: string; }> {
+    if (!storySoFar.trim()) {
+      throw new Error("Historien er tom, kan ikke generere metadata.");
+    }
+
+    const response = await axios.post(
+      environment.openAIConfig.apiUrl,
+      {
+        model: 'gpt-4-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: `
+              Genererer en meget kort og fængende bogbeskrivelse lavet til folkeskoleelever i en dansk ${grade}. klasse. og en billedbeskrivelse til en forsideillustration.
+              Brug historieteksten til at opsummere temaet kort og præcist.
+  
+              🔹 **Output-krav**:
+              1. Returnér udelukkende et JSON-objekt, intet andet tekst.
+              2. Strukturen skal være:
+                 {
+                   "description": "Meget kort bogbeskrivelse"
+                 }
+              3. **Ingen ekstra forklaringer, kun JSON!**
+            `
+          },
+          {
+            role: 'user',
+            content: `
+              Generér metadata for en bog med titlen **${storyTitle}**.
+  
+              🔹 **Generér en kort bogbeskrivelse** på 1 sætning, som opsummerer historiens indhold.
+              🔹 **Generér en billedbeskrivelse**, der kan bruges til en Google-billedsøgning til et billede til forsideillustration.
+    
+              Historieindhold:
+              ${storySoFar.substring(0, 5000)}
+  
+              Husk: Returnér **kun** gyldig JSON, uden ekstra tekst.
+            `.trim()
+          }
+        ],
+        max_tokens: 300
+      },
+      {
+        headers: { Authorization: `Bearer ${environment.openAIConfig.apiKey}`, 'Content-Type': 'application/json' }
+      }
+    );
+
+    const jsonResponse = response.data.choices[0].message.content.trim();
+
+    // 🔹 Validate JSON format before parsing
+    if (!jsonResponse.startsWith("{") || !jsonResponse.endsWith("}")) {
+      console.error("❌ AI response is not valid JSON:", jsonResponse);
+      throw new Error("Fejl i AI-output: Modtaget data er ikke valid JSON.");
+    }
+
+    try {
+      const metadata = JSON.parse(jsonResponse);
+      if (!metadata.description) {
+        throw new Error("Manglende felter i metadata.");
+      }
+      return metadata;
+    } catch (error) {
+      console.error("❌ Fejl ved parsing af AI-metadata:", error, "Modtaget output:", jsonResponse);
+      throw new Error("Fejl i AI-output, kunne ikke parse JSON.");
     }
   }
 

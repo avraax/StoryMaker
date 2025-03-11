@@ -30,34 +30,62 @@ export class FirestoreService {
 
     console.log("🔹 Current User:", auth.currentUser);
 
-    // Prepare story object WITHOUT images first
     let storyToSave: FireStoreStory = {
       title: story.title,
+      author: story.author,
+      description: story.description,
       createdAt: new Date(),
       updatedAt: new Date(),
-      chapters: []
+      chapters: [],
+      image: "" // Placeholder for cover image URL
     };
 
-    // 🔹 Upload images to Firebase Storage and replace them with URLs
-    for (let chapter of story.chapters) {
-      let updatedChapter = { ...chapter, images: [] as string[] };
+    // 🔹 Upload the cover image first (if available)
+    if (story.image && story.image.startsWith("data:image")) {
+      const now = Date.now();
+      const safeTitle = `${encodeURIComponent(story.title).replace(/%20/g, "_")}_${now}`;
+      const coverImagePath = `users/${userId}/stories/${safeTitle}/cover.jpg`;
+      const coverImageRef = ref(storage, coverImagePath);
 
-      if (chapter.images && chapter.images.length > 0) {
+      console.log(`📤 Uploading cover image: ${coverImagePath}`);
+
+      try {
+        await uploadString(coverImageRef, story.image, 'data_url');
+        const downloadURL = await getDownloadURL(coverImageRef);
+
+        const finalUrl = downloadURL.includes("firebasestorage.googleapis.com")
+          ? `${downloadURL}&alt=media`
+          : downloadURL;
+
+        storyToSave.image = finalUrl;
+        console.log(`✅ Cover image uploaded successfully: ${finalUrl}`);
+      } catch (error) {
+        console.error("❌ Cover image upload failed:", error);
+        throw error;
+      }
+    }
+
+    // 🔹 Upload images for each chapter
+    for (let chapterIndex = 0; chapterIndex < story.chapters.length; chapterIndex++) {
+      let updatedChapter = { ...story.chapters[chapterIndex], images: [] as string[] };
+
+      if (story.chapters[chapterIndex].images && story.chapters[chapterIndex].images.length > 0) {
         const now = Date.now();
-        for (let i = 0; i < chapter.images.length; i++) {
+        for (let imageIndex = 0; imageIndex < story.chapters[chapterIndex].images.length; imageIndex++) {
           const safeTitle = `${encodeURIComponent(story.title).replace(/%20/g, "_")}_${now}`;
-          const imagePath = `users/${userId}/stories/${safeTitle}/chapter_${i}.jpg`;
+          const imagePath = `users/${userId}/stories/${safeTitle}/chapter_${chapterIndex}_${imageIndex}.jpg`;
           const imageRef = ref(storage, imagePath);
 
-          console.log(`📤 Uploading image: ${imagePath}`);
+          console.log(`📤 Uploading chapter image: ${imagePath}`);
 
           try {
             // 🔹 Ensure valid Base64 image before upload
-            if (!chapter.images[i].startsWith("data:image")) {
-              throw new Error("Invalid Base64 image format.");
+            if (!story.chapters[chapterIndex].images[imageIndex].startsWith("data:image")) {
+              console.warn(`Invalid Base64 image format. Skipping! Image: ${story.chapters[chapterIndex].images[imageIndex]}`);
+              continue;
             }
 
-            await uploadString(imageRef, chapter.images[i], 'data_url');
+            await uploadString(imageRef, story.chapters[chapterIndex].images[imageIndex], 'data_url');
             const downloadURL = await getDownloadURL(imageRef);
 
             const finalUrl = downloadURL.includes("firebasestorage.googleapis.com")
@@ -65,9 +93,9 @@ export class FirestoreService {
               : downloadURL;
 
             updatedChapter.images.push(finalUrl);
-            console.log(`✅ Image uploaded successfully: ${finalUrl}`);
+            console.log(`✅ Chapter image uploaded successfully: ${finalUrl}`);
           } catch (error) {
-            console.error("❌ Image upload failed:", error);
+            console.error("❌ Chapter image upload failed:", error);
             throw error;
           }
         }
@@ -76,10 +104,11 @@ export class FirestoreService {
       storyToSave.chapters.push(updatedChapter);
     }
 
-    // 🔹 Save the modified story with image URLs to Firestore
+    // 🔹 Save the modified story with cover & chapter images to Firestore
     await addDoc(storiesCollection, storyToSave);
-    console.log(`✅ Story saved successfully with uploaded images.`);
+    console.log(`✅ Story saved successfully with cover and chapter images.`);
   }
+
 
   async deleteStory(userId: string, storyId: string) {
     const app = getApp();
@@ -115,8 +144,14 @@ export class FirestoreService {
 
     let storyData = storySnap.data() as FireStoreStory;
 
-    console.log("📥 Fetched story with images:", storyData);
-    return storyData;
+    // ✅ Ensure image is included
+    const storyWithImage: FireStoreStory = {
+      ...storyData,
+      image: storyData.image || "" // Default empty string if missing
+    };
+
+    console.log("📥 Fetched story with cover image:", storyWithImage);
+    return storyWithImage;
   }
 
   getStories(userId: string): Observable<FireStoreStory[]> {
@@ -126,6 +161,7 @@ export class FirestoreService {
       map((stories: DocumentData[]) =>
         stories.map(story => ({
           ...story,
+          image: story['image'] || "", // ✅ Ensure cover image is mapped
           chapters: (story['chapters'] as any[])?.map((chapter: any) => ({
             ...chapter,
             images: (chapter['images'] as string[])?.map(img => img.startsWith('http') ? img : null) || []

@@ -42,6 +42,7 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
       this.firestoreService.getStories(this.user.uid).subscribe(stories => {
         this.stories = stories.map(story => ({
           ...story,
+          image: story.image || "", // ✅ Ensure the image is always defined
           updatedAt: story.updatedAt instanceof Timestamp
             ? new Date(story.updatedAt.seconds * 1000) // Convert Firestore Timestamp to JavaScript Date
             : story.updatedAt // Keep it as Date if already converted
@@ -49,6 +50,7 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
       });
     }
   }
+  
 
   ngOnDestroy(): void {
     this.selectedStory.unsubscribe();

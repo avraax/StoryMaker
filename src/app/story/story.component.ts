@@ -106,40 +106,59 @@ export class StoryComponent implements OnInit, OnDestroy {
     if (!this.inputTopic || !this.selectedGrade) {
       return;
     }
+
     this.story.next(null);
     this.reset();
     this.totalChapters = this.aiService.totalChapters;
 
-    this.progressDescription = `genererer kapitler`;
+    this.progressDescription = `Genererer kapitler`;
 
     try {
-      // Using async generator method
-      for await (let chapter of this.aiService.generateStoryStream(this.mainCategory, this.subCategory, this.inputTopic, this.selectedGrade)) {
-        this.chapters.push(chapter); // Update story dynamically
-        this.generatedChapters++; // Update progress bar
-        this.progressCompletedTasks++;
+      let coverMetadata: { description: string; image: string } | null = null;
+
+      for await (let data of this.aiService.generateStoryStream(this.mainCategory, this.subCategory, this.inputTopic, this.selectedGrade)) {
+        if ('title' in data) {
+          // ✅ This is a chapter
+          this.chapters.push(data);
+          this.generatedChapters++;
+          this.progressCompletedTasks++;
+        } else {
+          // ✅ This is metadata (cover + description)
+          coverMetadata = data;
+        }
 
         if (this.generatedChapters >= this.progressCompletedTasks) {
-          this.progressDescription = `gemmer genereret histore`;
+          this.progressDescription = `Gemmer historie`;
         }
       }
 
+      // ✅ Ensure we have metadata before saving the final story
+      if (!coverMetadata) {
+        throw new Error("Metadata mangler. Kunne ikke generere beskrivelse og forsidebillede.");
+      }
+
+      const date = new Date();
+      
       this.story.next({
         title: this.inputTopic,
         chapters: this.chapters,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        author: 'ChatGPT',
+        description: coverMetadata.description,
+        image: coverMetadata.image, // ✅ Set cover image
+        createdAt: date,
+        updatedAt: date,
       });
 
     } catch (error) {
       this.reset();
-      console.error('error generating story', error);
+      console.error('Error generating story:', error);
       throw error;
     }
 
     this.progressCompletedTasks++;
     this.loading = false;
   }
+
 
   private reset(): void {
     this.story.next(null);
