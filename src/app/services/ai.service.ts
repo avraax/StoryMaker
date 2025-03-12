@@ -55,6 +55,7 @@ export class AIService {
               content: `
                 Generér **kapitel ${i}** af en faktuel historie om **${topic}**${mainCategory !== 'other' ? ` inden for **${subCategory}** i **${mainCategory}**` : ''}.
                 Historien skal være sammenhængende og fortsætte fra tidligere kapitler.
+                Hvert kapital må max have 200 ord.
                 
                 ${i > 1 ? `🔹 **Resumé af historien indtil nu:**\n\`\`\`json\n${JSON.stringify(storySoFar)}\n\`\`\`` : ''} 
                 
