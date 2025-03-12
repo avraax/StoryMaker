@@ -50,7 +50,7 @@ export class AIService {
                 2. **For "imageQuery"**:
                   - Lav en **kort og præcis søgestreng** på **engelsk**.
                   - Basér den på **de vigtigste nøgleord fra kapitlets indhold**.
-                  - **Undgå lange sætninger** – brug 3-6 relevante søgeord adskilt af mellemrum.
+                  - **Undgå lange sætninger** – brug 1-3 relevante søgeord adskilt af mellemrum.
                   - Hvis kapitlet beskriver en person, begivenhed eller sted, inkludér det.
                   - **Eksempler**:
                     - "Albert Einstein physics theory"
@@ -101,7 +101,7 @@ export class AIService {
         throw new Error("AI-returneret JSON mangler nødvendige felter.");
       }
 
-      let images = await this.imageService.fetchImages(newChapter.imageQuery, this.imagesPerChapter);
+      let images = await this.imageService.fetchImages(`${topic} ${newChapter.imageQuery}`, this.imagesPerChapter);
       newChapter.images = images;
 
       storySoFar += `\nKapitel ${i}: ${newChapter.title}\n${newChapter.texts.join(" ")}\n`;
@@ -116,7 +116,7 @@ export class AIService {
 
     // 🔹 Generate metadata after all chapters have been created
     const metadata = await this.generateStoryMetadata(topic, storySoFar, grade);
-    const coverImages = await this.imageService.fetchImages(`${topic} cover`, 5);
+    const coverImages = await this.imageService.fetchImages(`${topic} profile picture`, 5);
     const coverImage = coverImages.find(img => img.startsWith("data:image")) || "";
 
     yield {

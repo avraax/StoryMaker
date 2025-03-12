@@ -53,7 +53,7 @@
     </mat-card>
     }
 
-    @if(!loading && progressCompletedTasks >= this.totalTasks) {
+    @if(!loading && this.totalTasks > 0 && progressCompletedTasks >= this.totalTasks) {
     <mat-card class="story-box">
         <div class="message-container">
             <p>
