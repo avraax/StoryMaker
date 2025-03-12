@@ -47,13 +47,13 @@
 
     @if(loading && totalChapters > 0) {
     <mat-card class="progress-container">
-        <app-progress-tracker [description]="progressDescription" [totalTasks]="totalChapters + 1"
+        <app-progress-tracker [description]="progressDescription" [totalTasks]="this.totalTasks"
             [completedTasks]="progressCompletedTasks">
         </app-progress-tracker>
     </mat-card>
     }
 
-    @if(!loading && chapters.length > 0) {
+    @if(!loading && progressCompletedTasks >= this.totalTasks) {
     <mat-card class="story-box">
         <div class="message-container">
             <p>

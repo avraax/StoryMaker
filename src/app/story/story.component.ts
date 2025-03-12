@@ -51,9 +51,8 @@ export class StoryComponent implements OnInit, OnDestroy {
   chapters: StoryChapter[] = [];
   loading: boolean = false;
   showStoryViewer: boolean = false;
-
-  generatedChapters: number = 0;
   totalChapters: number = 0;
+  totalTasks: number = 0;
   progressDescription: string | null = null;
   progressCompletedTasks: number = 0;
 
@@ -110,6 +109,7 @@ export class StoryComponent implements OnInit, OnDestroy {
     this.story.next(null);
     this.reset();
     this.totalChapters = this.aiService.totalChapters;
+    this.totalTasks = this.totalChapters + 1;
 
     this.progressDescription = `Genererer kapitler`;
 
@@ -120,14 +120,13 @@ export class StoryComponent implements OnInit, OnDestroy {
         if ('title' in data) {
           // ✅ This is a chapter
           this.chapters.push(data);
-          this.generatedChapters++;
           this.progressCompletedTasks++;
         } else {
           // ✅ This is metadata (cover + description)
           coverMetadata = data;
         }
 
-        if (this.generatedChapters >= this.progressCompletedTasks) {
+        if (this.progressCompletedTasks >= this.totalChapters) {
           this.progressDescription = `Gemmer historie`;
         }
       }
@@ -165,7 +164,6 @@ export class StoryComponent implements OnInit, OnDestroy {
     this.progressCompletedTasks = 0;
     this.progressDescription = '';
     this.chapters = [];
-    this.generatedChapters = 0;
     this.loading = true;
   }
 

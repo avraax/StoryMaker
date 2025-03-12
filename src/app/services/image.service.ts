@@ -7,19 +7,39 @@ import { environment } from '../../environments/environment';
 })
 export class ImageService {
 
-  constructor() {}
-
-  async fetchImages(imageQuery: string, maxImages: number): Promise<string[]> {
+  constructor() { } async fetchImages(imageQuery: string, maxImages: number): Promise<string[]> {
     let images: string[] = [];
+    let startIndex = 1; // Google API bruger 1-baseret indeks
 
-    const googleImages = await this.fetchGoogleImage(imageQuery, maxImages);
-    if (googleImages && googleImages.length > 0) {
-      for (const imgUrl of googleImages) {
-        const base64Image = await this.convertImageToBase64(imgUrl);
-        if (base64Image) {
-          images.push(base64Image);
+    try {
+      while (images.length < maxImages) {
+        // Hent billeder fra Google (max 10 per gang)
+        const batchSize = Math.min(10, maxImages - images.length);
+        const googleImages = await this.fetchGoogleImage(imageQuery, batchSize, startIndex);
+
+        if (!googleImages || googleImages.length === 0) {
+          break; // Stop hvis ingen flere billeder findes
+        }
+
+        for (const imgUrl of googleImages) {
+          if (images.length >= maxImages) break; // Stop hvis vi har nok billeder
+
+          const base64Image = await this.convertImageToBase64(imgUrl);
+          if (base64Image) {
+            images.push(base64Image);
+          }
+        }
+
+        // Opdater startIndex for næste batch
+        startIndex += batchSize;
+
+        // Hvis vi fik færre billeder end batchSize, betyder det, at der ikke er flere at hente
+        if (googleImages.length < batchSize) {
+          break;
         }
       }
+    } catch (error) {
+      console.error("Error fetching images:", error);
     }
 
     return images;
@@ -56,36 +76,26 @@ export class ImageService {
     return null;
   }
 
-  async fetchGoogleImage(imageQuery: string, maxImages: number): Promise<string[]> {
+  async fetchGoogleImage(imageQuery: string, batchSize: number, startIndex: number): Promise<string[]> {
     try {
       const response = await axios.get(`https://www.googleapis.com/customsearch/v1`, {
         params: {
-          q: `${imageQuery}`,
+          q: imageQuery,
           searchType: "image",
           cx: environment.googleConfig.cseId,
           key: environment.googleConfig.apiKey,
-          num: maxImages,
+          num: batchSize,
+          start: startIndex,
           imgSize: "large",
           imgType: "photo",
-          fileType: "jpg,png",
           safe: "high",
-          lr: "lang_en",
         },
       });
-  
-      return response.data.items.map((item: any) => item.link);
+
+      return response.data.items ? response.data.items.map((item: any) => item.link) : [];
     } catch (error) {
       console.error("Error fetching images:", error);
       return [];
-    }
-  }
-
-  async isImageAccessible(url: string): Promise<boolean> {
-    try {
-      const response = await axios.head(url, { timeout: 5000 });
-      return response.status === 200;
-    } catch {
-      return false;  // If the image cannot be loaded, filter it out
     }
   }
 }

@@ -8,11 +8,11 @@ import { ImageService } from './image.service';
   providedIn: 'root',
 })
 export class AIService {
-  totalChapters: number = 10;
-  maxStoryTokens: number = 1000;
-  imagesPerChapter: number = 4;
+  totalChapters: number = 5;
+  maxTokensPerRequest: number = 4096; // Maksimale tokens pr. kald = 4096
+  imagesPerChapter: number = 12;
 
-  constructor(private imageService: ImageService) { }
+  constructor(private imageService: ImageService) {}
 
   async *generateStoryStream(
     mainCategory: string,
@@ -21,12 +21,13 @@ export class AIService {
     grade: number
   ): AsyncGenerator<StoryChapter | { description: string; image: string }, void, unknown> {
 
-    const maxWords = Math.floor(this.maxStoryTokens * 0.75);
     let storySoFar = "";
-    const chapters: StoryChapter[] = [];
+    let nextChapterHint = ""; // Hint til næste kapitel
 
     for (let i = 1; i <= this.totalChapters; i++) {
       let roleInstructions = this.getRoleInstructions(i, this.totalChapters);
+
+      console.log(`🔹 Genererer kapitel ${i} med maksimale tokens: ${this.maxTokensPerRequest}`);
 
       const response = await axios.post(
         environment.openAIConfig.apiUrl,
@@ -37,17 +38,27 @@ export class AIService {
               role: 'system',
               content: `
                 Du skriver 100% faktuelle historier til folkeskoleelever i en dansk ${grade}. klasse.
-                Historien skal være sammenhængende og bygge videre fra kapitel til kapitel.
+                Historien skal være sammenhængende og bygge videre fra kapitel til kapitel og være letlæselig i forhold til klassetrinet.
                 
                 🔹 **Output-krav**:
                 1. Returnér en gyldig JSON-struktur:
                    {
                      "title": "Kapitel X: Titel",
-                     "texts": ["Afsnit 1", "Afsnit 2"],
-                     "imageQuery": "Optimeret Google-billedsøgning"
-                   }
-                2. **For "imageQuery"**, generér en optimeret søgestreng til Google Custom Search API.
+                     "texts": ["Afsnit 1", "Afsnit 2"],,
+                    "imageQuery": "Optimized Google Image Search Query in English"
+                  }
+                2. **For "imageQuery"**:
+                  - Lav en **kort og præcis søgestreng** på **engelsk**.
+                  - Basér den på **de vigtigste nøgleord fra kapitlets indhold**.
+                  - **Undgå lange sætninger** – brug 3-6 relevante søgeord adskilt af mellemrum.
+                  - Hvis kapitlet beskriver en person, begivenhed eller sted, inkludér det.
+                  - **Eksempler**:
+                    - "Albert Einstein physics theory"
+                    - "Vikings longships battle"
+                    - "Ancient Rome Colosseum gladiators"
+                  - **Undgå** at bruge generiske ord som "image" eller "picture".
                 3. **Ingen ekstra tekst udenfor JSON-objektet**.
+                4. Udnyt det maksimale antal tokens **(${this.maxTokensPerRequest})** til at generere så meget tekst som muligt.
               `
             },
             {
@@ -55,17 +66,19 @@ export class AIService {
               content: `
                 Generér **kapitel ${i}** af en faktuel historie om **${topic}**${mainCategory !== 'other' ? ` inden for **${subCategory}** i **${mainCategory}**` : ''}.
                 Historien skal være sammenhængende og fortsætte fra tidligere kapitler.
-                Hvert kapital må max have 200 ord.
-                
+            
                 ${i > 1 ? `🔹 **Resumé af historien indtil nu:**\n\`\`\`json\n${JSON.stringify(storySoFar)}\n\`\`\`` : ''} 
                 
                 - ${roleInstructions}
+                - **Sørg for at afslutte alle løse tråde i kapitlet eller introducere dem igen i senere kapitler.**
+                - **Hvis en stor begivenhed nævnes, skal den udfolde sig i de følgende kapitler.**
+                - **Overhold denne anvisning til næste kapitel: ${nextChapterHint}**
+                - **Brug maksimale tokens for at generere så meget indhold som muligt.**
                 - Returnér **kun** valid JSON som beskrevet.
-                - **Sørg for, at teksten er velstruktureret og korrekt escape'et.**
               `.trim()
             }
           ],
-          max_tokens: this.maxStoryTokens
+          max_tokens: this.maxTokensPerRequest
         },
         {
           headers: { Authorization: `Bearer ${environment.openAIConfig.apiKey}`, 'Content-Type': 'application/json' }
@@ -93,7 +106,9 @@ export class AIService {
 
       storySoFar += `\nKapitel ${i}: ${newChapter.title}\n${newChapter.texts.join(" ")}\n`;
 
-      chapters.push(newChapter); // Store chapters for later metadata generation
+      // 🔹 Generér hint til næste kapitel
+      nextChapterHint = await this.getNextChapterHint(storySoFar);
+
       yield newChapter; // Yield each chapter in the stream
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -101,7 +116,7 @@ export class AIService {
 
     // 🔹 Generate metadata after all chapters have been created
     const metadata = await this.generateStoryMetadata(topic, storySoFar, grade);
-    const coverImages = await this.imageService.fetchImages(topic, 5);
+    const coverImages = await this.imageService.fetchImages(`${topic} cover`, 5);
     const coverImage = coverImages.find(img => img.startsWith("data:image")) || "";
 
     yield {
@@ -110,6 +125,44 @@ export class AIService {
     };
   }
 
+  // 🔹 Funktion til at generere næste kapitelhint
+  private async getNextChapterHint(storySoFar: string): Promise<string> {
+    try {
+      const response = await axios.post(
+        environment.openAIConfig.apiUrl,
+        {
+          model: 'gpt-4-turbo',
+          messages: [
+            {
+              role: 'system',
+              content: `
+                Ud fra den eksisterende historie, lav en kort beskrivelse (maks 2 sætninger) af, hvad næste kapitel bør handle om, for at sikre en sammenhængende fortælling.
+                Returnér kun en kort beskrivelse.
+              `
+            },
+            {
+              role: 'user',
+              content: `
+                Historie indtil nu:
+                ${storySoFar.substring(0, 5000)}
+
+                Hvad bør næste kapitel dække?
+              `.trim()
+            }
+          ],
+          max_tokens: 100
+        },
+        {
+          headers: { Authorization: `Bearer ${environment.openAIConfig.apiKey}`, 'Content-Type': 'application/json' }
+        }
+      );
+
+      return response.data.choices[0].message.content.trim();
+    } catch (error) {
+      console.error("Fejl ved generering af nextChapterHint:", error);
+      return "";
+    }
+  }
 
   async generateStoryMetadata(storyTitle: string, storySoFar: string, grade: number): Promise<{ description: string; }> {
     if (!storySoFar.trim()) {
@@ -181,27 +234,30 @@ export class AIService {
   private getRoleInstructions(i: number, chapterCount: number): string {
     if (i === 1) {
       return `
-        **Dette er kapitel 1 af historien.**
-        - Introducér emnet klart og engagerende.
-        - Giv baggrundsinformation og kontekst.
-        - Forklar vigtige nøglepunkter for at sætte rammen for historien.
-        - Afslut ikke historien her, men forbered læseren på de næste kapitler.
+        **Kapitel 1: Begyndelsen af historien**
+        - Introducér emnet på en engagerende måde, og skab en rød tråd.
+        - Giv nødvendig baggrundsinformation for at sætte scenen.
+        - Start tidslinjen, hvis relevant, ved at beskrive den første begivenhed i en naturlig fortællestil.
+        - Lad læseren forstå historiens forløb uden at det bliver en ren opremsning.
+        - Afslut kapitlet med en tydelig overgang til næste begivenhed eller periode.
       `;
     } else if (i === chapterCount) {
       return `
-        **Dette er det sidste kapitel i historien.**
-        - Byg videre på tidligere kapitler.
-        - Opsummer vigtige pointer fra tidligere kapitler.
-        - Sørg for en stærk afslutning, der binder det hele sammen.
+        **Kapitel ${i}: Afslutningen af historien**
+        - Byg videre på de tidligere kapitler og knyt de vigtigste tråde sammen.
+        - Beskriv de seneste begivenheder på tidslinjen og deres konsekvenser.
+        - Giv en afrunding, der sætter historien i perspektiv.
+        - Sørg for en stærk afslutning, hvor tidslinjen føles fuldendt.
       `;
     } else {
       return `
-        **Dette er et midterkapitel.**
-        - Byg videre på tidligere kapitler.
-        - Tilføj flere detaljer, forklaringer og eksempler.
-        - Introducér nye relevante fakta, men hold en logisk progression.
-        - Sørg for en naturlig overgang til det næste kapitel.
+        **Kapitel ${i}: Videre i fortællingen**
+        - Tag udgangspunkt i den foregående begivenhed og før tidslinjen videre.
+        - Uddyb med detaljer, eksempler og sammenhænge, så progressionen føles naturlig.
+        - Introducér nye nøglepunkter i fortællingen, som skubber handlingen fremad.
+        - Hvis historien spænder over en længere periode, gør overgangen mellem tidspunkter flydende.
+        - Skab en naturlig overgang til næste kapitel, så læseren fastholdes i fortællingen.
       `;
     }
-  }
+  }  
 }

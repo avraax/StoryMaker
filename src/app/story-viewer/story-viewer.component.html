@@ -7,7 +7,6 @@
                     <div class="custom-swiper-wrapper" [style.transform]="getTransformStyle()">
 
                         <!-- Cover Page -->
-                        <!-- Cover Page -->
                         <div class="custom-swiper-slide cover-page">
                             <div class="cover-content">
                                 <img *ngIf="storyObj.image" [src]="storyObj.image" class="cover-image" alt="Bogforside">
@@ -17,20 +16,24 @@
                             </div>
                         </div>
 
-                        <!-- Chapters -->
-                        <div class="custom-swiper-slide chapter-container" *ngFor="let chapter of storyObj.chapters">
+                        <!-- Chapter Pages -->
+                        <div class="custom-swiper-slide chapter-container" *ngFor="let slide of chapterSlides">
                             <div class="chapter-texts-container">
-                                <h3 class="chapter-title">{{ chapter.title }}</h3>
+                                @if(slide.isFirstSlide) {
+                                    <h3 class="chapter-title">{{ slide.chapterTitle }}</h3>
+                                }
+                                @else {
+                                    <h3 class="chapter-title">&#8203;</h3>
+                                }
                                 <div class="chapter-content">
                                     <div class="chapter-layout">
                                         <div class="chapter-texts">
-                                            <p *ngFor="let paragraph of chapter.texts" class="chapter-paragraph">
+                                            <p *ngFor="let paragraph of slide.texts" class="chapter-paragraph">
                                                 {{ paragraph }}
                                             </p>
                                         </div>
-                                        <div class="chapter-images" *ngIf="chapter.images?.length">
-                                            <div class="image-row"
-                                                *ngFor="let imgChunk of groupImages(chapter.images, 2)">
+                                        <div class="chapter-images" *ngIf="slide.images.length > 0">
+                                            <div class="image-row" *ngFor="let imgChunk of groupImages(slide.images, 2)">
                                                 <div class="image-wrapper" *ngFor="let img of imgChunk">
                                                     <img [src]="img" class="chapter-image">
                                                 </div>
@@ -55,19 +58,15 @@
                 <!-- Navigation Controls -->
                 <div class="pagination-container">
                     <div class="pagination-controls">
-                        <button mat-raised-button color="primary" (click)="previousPage()"
-                            [disabled]="currentPageIndex === 0">
+                        <button mat-raised-button color="primary" (click)="previousPage()" [disabled]="currentPageIndex === 0">
                             Forrige
                         </button>
                         <span class="page-indicator">{{ currentPageIndex + 1 }} / {{ totalPages }}</span>
-                        <button mat-raised-button color="primary" (click)="nextPage()"
-                            [disabled]="currentPageIndex === totalPages - 1">
+                        <button mat-raised-button color="primary" (click)="nextPage()" [disabled]="currentPageIndex === totalPages - 1">
                             Næste
                         </button>
                     </div>
-
-                    <button mat-raised-button color="accent" class="export-button" (click)="exportToPDF()">Eksporter til
-                        PDF</button>
+                    <button mat-raised-button color="accent" class="export-button" (click)="exportToPDF()">Eksporter til PDF</button>
                 </div>
             </div>
         </div>
