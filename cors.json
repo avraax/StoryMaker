@@ -6,7 +6,8 @@
       "POST",
       "PUT",
       "DELETE",
-      "OPTIONS"
+      "OPTIONS",
+      "PATCH"
     ],
     "origin": [
       "http://localhost:4200",

@@ -204,7 +204,7 @@ export class AIService {
             `.trim()
           }
         ],
-        max_tokens: 300
+        max_tokens: 500
       },
       {
         headers: { Authorization: `Bearer ${environment.openAIConfig.apiKey}`, 'Content-Type': 'application/json' }
