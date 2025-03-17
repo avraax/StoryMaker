@@ -10,8 +10,8 @@
         position: fixed;
         top: 0;
         left: 0;
-        width: 100vw;
-        height: 100vh;
+        width: 100%;
+        height: 100%;
         background: #fff;
         display: flex;
         justify-content: center;
@@ -111,8 +111,18 @@
                         }
                     }
                 }
-            }
 
+                .cover-content {
+                    .lix-box {
+                        position: absolute;
+                        bottom: 20px;
+                        left: 20px;
+                        font-size: 12px;
+                        padding: 5px 10px;
+                        border-radius: 5px;
+                    }
+                }
+            }
         }
 
         .pagination-container {

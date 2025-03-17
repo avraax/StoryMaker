@@ -8,5 +8,6 @@ export interface FireStoreStory {
     image: string;
     description: string;
     createdAt: Date;   // Timestamp for creation
-    updatedAt: Date;  // Timestamp for updates
+    updatedAt: Date;   // Timestamp for updates
+    lix: number;       // 🔹 Nyt felt til LIX-niveau
 }

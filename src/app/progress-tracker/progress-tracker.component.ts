@@ -11,7 +11,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
   styleUrls: ['./progress-tracker.component.scss']
 })
 export class ProgressTrackerComponent {
-  @Input() description: string |null = "udført";
+  @Input() description: string |null = "";
   @Input() totalTasks: number = 0;
   @Input() completedTasks: number = 0;
 

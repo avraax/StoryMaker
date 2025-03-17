@@ -37,6 +37,7 @@ export class FirestoreService {
       createdAt: new Date(),
       updatedAt: new Date(),
       chapters: [],
+      lix: story.lix,
       image: "" // Placeholder for cover image URL
     };
 

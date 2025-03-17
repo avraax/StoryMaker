@@ -65,8 +65,22 @@ export class StoryComponent implements OnInit, OnDestroy {
   natureSubcategories = ['Klimaændringer', 'Dyr', 'Planter', 'Økosystemer'];
   spaceSubcategories = ['Planeter', 'Stjernebilleder', 'Astronauter', 'Rumrejser'];
 
-  gradeLevels = Array.from({ length: 11 }, (_, i) => i); // 0.-10. klasse
-
+  selectedLix: number = 20;
+  lixLevels = [
+    { value: 3, label: "LIX 3-5 (0. kl.)" },
+    { value: 5, label: "LIX 4-6 (0.-1. kl.)" },
+    { value: 7, label: "LIX 5-7 (1. kl.)" },
+    { value: 9, label: "LIX 6-8 (2. kl.)" },
+    { value: 11, label: "LIX 7-9 (2.-3. kl.)" },
+    { value: 13, label: "LIX 9-11 (3.-4. kl.)" },
+    { value: 15, label: "LIX 11-13 (4.-5. kl.)" },
+    { value: 20, label: "LIX 15-20 (5.-6. kl.)" },
+    { value: 25, label: "LIX 20-25 (6.-7. kl.)" },
+    { value: 30, label: "LIX 25-30 (7.-8. kl.)" },
+    { value: 35, label: "LIX 30-35 (8.-9. kl.)" },
+    { value: 40, label: "LIX 35-40 (9. kl.)" },
+    { value: 45, label: "LIX >40 (Gymnasium/voksen)" }
+  ];
   constructor(private aiService: AIService, private firestoreService: FirestoreService, public storyUtils: StoryUtilsService) { }
 
   ngOnInit() {
@@ -102,7 +116,7 @@ export class StoryComponent implements OnInit, OnDestroy {
   }
 
   async generateStory() {
-    if (!this.inputTopic || !this.selectedGrade) {
+    if (!this.inputTopic || !this.selectedLix) {
       return;
     }
 
@@ -110,19 +124,21 @@ export class StoryComponent implements OnInit, OnDestroy {
     this.reset();
     this.totalChapters = this.aiService.totalChapters;
     this.totalTasks = this.totalChapters + 1;
-
-    this.progressDescription = `Genererer kapitler`;
+    this.progressDescription = `Genererer kapitel ${(this.chapters.length + 1)} af ${this.totalChapters}`;
 
     try {
       let coverMetadata: { description: string; image: string } | null = null;
 
-      for await (let data of this.aiService.generateStoryStream(this.mainCategory, this.subCategory, this.inputTopic, this.selectedGrade)) {
+      for await (let data of this.aiService.generateStoryStream(this.mainCategory, this.subCategory, this.inputTopic, this.selectedLix)) {
         if ('title' in data) {
-          // ✅ This is a chapter
           this.chapters.push(data);
+
+          if (this.chapters.length < this.totalChapters) {
+            this.progressDescription = `Genererer kapitel ${(this.chapters.length + 1)} af ${this.totalChapters}`;
+          }
+
           this.progressCompletedTasks++;
         } else {
-          // ✅ This is metadata (cover + description)
           coverMetadata = data;
         }
 
@@ -131,21 +147,21 @@ export class StoryComponent implements OnInit, OnDestroy {
         }
       }
 
-      // ✅ Ensure we have metadata before saving the final story
       if (!coverMetadata) {
         throw new Error("Metadata mangler. Kunne ikke generere beskrivelse og forsidebillede.");
       }
 
       const date = new Date();
-      
+
       this.story.next({
         title: this.inputTopic,
         chapters: this.chapters,
         author: 'ChatGPT',
         description: coverMetadata.description,
-        image: coverMetadata.image, // ✅ Set cover image
+        image: coverMetadata.image,
         createdAt: date,
         updatedAt: date,
+        lix: this.selectedLix
       });
 
     } catch (error) {
@@ -157,7 +173,6 @@ export class StoryComponent implements OnInit, OnDestroy {
     this.progressCompletedTasks++;
     this.loading = false;
   }
-
 
   private reset(): void {
     this.story.next(null);

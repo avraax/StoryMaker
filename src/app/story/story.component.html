@@ -30,11 +30,12 @@
             [disabled]="loading" (keydown.enter)="generateStory()">
     </mat-form-field>
 
-
     <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Vælg Klassetrin</mat-label>
-        <mat-select [disabled]="loading" [(ngModel)]="selectedGrade">
-            <mat-option *ngFor="let grade of gradeLevels" [value]="grade">Klasse {{ grade }}</mat-option>
+        <mat-label>Vælg LIX-niveau</mat-label>
+        <mat-select [(ngModel)]="selectedLix">
+            <mat-option *ngFor="let lix of lixLevels" [value]="lix.value">
+                {{ lix.label }}
+            </mat-option>
         </mat-select>
     </mat-form-field>
 

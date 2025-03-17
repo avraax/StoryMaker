@@ -18,9 +18,10 @@ export class AIService {
     mainCategory: string,
     subCategory: string,
     topic: string,
-    grade: number
+    lix: number
   ): AsyncGenerator<StoryChapter | { description: string; image: string }, void, unknown> {
-
+  
+    let lixDescription = this.getLixDescription(lix);
     let storySoFar = "";
     let nextChapterHint = ""; // Hint til næste kapitel
 
@@ -37,7 +38,8 @@ export class AIService {
             {
               role: 'system',
               content: `
-                Du skriver 100% faktuelle historier til folkeskoleelever i en dansk ${grade}. klasse.
+                Du skriver letlæselige 100% faktuelle historier på dansk med en LIX-score på ${lix}.
+                ${lixDescription}
                 Historien skal være sammenhængende og bygge videre fra kapitel til kapitel og være letlæselig i forhold til klassetrinet.
                 
                 🔹 **Output-krav**:
@@ -115,7 +117,7 @@ export class AIService {
     }
 
     // 🔹 Generate metadata after all chapters have been created
-    const metadata = await this.generateStoryMetadata(topic, storySoFar, grade);
+    const metadata = await this.generateStoryMetadata(topic, storySoFar, lix);
     const coverImages = await this.imageService.fetchImages(`${topic} profile picture`, 5);
     const coverImage = coverImages.find(img => img.startsWith("data:image")) || "";
 
@@ -123,6 +125,20 @@ export class AIService {
       description: metadata.description,
       image: coverImage
     };
+  }
+
+  private getLixDescription(lix: number): string {
+    if (lix <= 5) {
+      return "Brug korte sætninger, enkle ord og mange punktummer.";
+    } else if (lix <= 15) {
+      return "Brug korte sætninger, men introducér enkelte længere ord.";
+    } else if (lix <= 25) {
+      return "Brug mellemlange sætninger og flere faglige ord.";
+    } else if (lix <= 35) {
+      return "Brug længere sætninger, sammensatte ord og komplekse begreber.";
+    } else {
+      return "Brug komplekse sætninger, akademiske begreber og avanceret terminologi.";
+    }
   }
 
   // 🔹 Funktion til at generere næste kapitelhint
@@ -164,10 +180,12 @@ export class AIService {
     }
   }
 
-  async generateStoryMetadata(storyTitle: string, storySoFar: string, grade: number): Promise<{ description: string; }> {
+  async generateStoryMetadata(storyTitle: string, storySoFar: string, lix: number): Promise<{ description: string; }> {
     if (!storySoFar.trim()) {
       throw new Error("Historien er tom, kan ikke generere metadata.");
     }
+
+    let lixDescription = this.getLixDescription(lix);
 
     const response = await axios.post(
       environment.openAIConfig.apiUrl,
@@ -177,7 +195,8 @@ export class AIService {
           {
             role: 'system',
             content: `
-              Genererer en meget kort og fængende bogbeskrivelse lavet til folkeskoleelever i en dansk ${grade}. klasse. og en billedbeskrivelse til en forsideillustration.
+              Genererer en meget kort og fængende bogbeskrivelse på dansk med en LIX-score på ${lix}.
+              ${lixDescription}
               Brug historieteksten til at opsummere temaet kort og præcist.
   
               🔹 **Output-krav**:
@@ -194,7 +213,7 @@ export class AIService {
             content: `
               Generér metadata for en bog med titlen **${storyTitle}**.
   
-              🔹 **Generér en kort bogbeskrivelse** på 1 sætning, som opsummerer historiens indhold.
+              🔹 **Generér en kort bogbeskrivelse** på 20 ord, som opsummerer historiens indhold.
               🔹 **Generér en billedbeskrivelse**, der kan bruges til en Google-billedsøgning til et billede til forsideillustration.
     
               Historieindhold:
@@ -204,7 +223,7 @@ export class AIService {
             `.trim()
           }
         ],
-        max_tokens: 500
+        max_tokens: 800
       },
       {
         headers: { Authorization: `Bearer ${environment.openAIConfig.apiKey}`, 'Content-Type': 'application/json' }
