@@ -1,0 +1,15 @@
+<h2 mat-dialog-title>Del historie</h2>
+<mat-dialog-content>
+  <p>Vælg hvilke brugere der skal have adgang til denne historie:</p>
+  <mat-selection-list>
+    @for (user of assignedUsers; track user.uid) {
+      <mat-list-option [(selected)]="user.selected">
+        {{ user.email }}
+      </mat-list-option>
+    }
+  </mat-selection-list>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="closeDialog()">Annuller</button>
+  <button mat-raised-button color="primary" (click)="saveSharing()">Gem</button>
+</mat-dialog-actions>

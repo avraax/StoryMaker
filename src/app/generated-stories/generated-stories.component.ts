@@ -13,6 +13,7 @@ import { Timestamp } from 'firebase/firestore';
 import { MatTableModule } from '@angular/material/table';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { DeleteConfirmationDialogComponent } from '../delete-confirmation-dialog/delete-confirmation-dialog.component';
+import { ShareStoryDialogComponent } from '../share-story-dialog/share-story-dialog.component';
 
 @Component({
   selector: 'app-generated-stories',
@@ -39,14 +40,14 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     if (this.user) {
-      this.firestoreService.getStories(this.user.uid).subscribe(stories => {
+      this.firestoreService.getStoriesForUser(this.user.uid).subscribe(stories => {
         this.stories = stories.map(story => ({
           ...story,
-          image: story.image || "", // ✅ Ensure the image is always defined
+          image: story.image || "",
           updatedAt: story.updatedAt instanceof Timestamp
-            ? new Date(story.updatedAt.seconds * 1000) // Convert Firestore Timestamp to JavaScript Date
-            : story.updatedAt // Keep it as Date if already converted
-        })).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()); // Sort by date descending
+            ? new Date(story.updatedAt.seconds * 1000)
+            : story.updatedAt
+        })).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
       });
     }
   }
@@ -71,7 +72,7 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
 
   async deleteStory(storyId: string | undefined) {
     if (this.user && storyId) {
-      await this.firestoreService.deleteStory(this.user.uid, storyId);
+      await this.firestoreService.deleteStory(this.user.uid);
       this.stories = this.stories.filter(story => story.id !== storyId);
     }
   }
@@ -82,5 +83,18 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
 
   closeStoryViewer() {
     this.selectedStory.next(null);
+  }
+
+  openShareDialog(story: FireStoreStory) {
+    const dialogRef = this.dialog.open(ShareStoryDialogComponent, {
+      width: '400px',
+      data: { story }
+    });
+
+    dialogRef.afterClosed().subscribe(selectedUserIds => {
+      if (selectedUserIds !== undefined) {
+        this.firestoreService.updateStorySharing(story.id as string, selectedUserIds);
+      }
+    });
   }
 }

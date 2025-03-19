@@ -1,174 +1,230 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, addDoc, doc, deleteDoc, getDoc, collectionData, getDocs, DocumentData, CollectionReference } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, doc, deleteDoc, getDoc, collectionData, getDocs, updateDoc, DocumentData, CollectionReference, setDoc, DocumentReference } from '@angular/fire/firestore';
 import { getApp } from '@angular/fire/app';
 import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from '@angular/fire/storage';
 import { FireStoreStory } from '../models/firestore-story';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { getAuth } from '@angular/fire/auth';
+import { getAuth, User } from '@angular/fire/auth';
+import { UserModel } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FirestoreService {
-  constructor(private firestore: Firestore) { }
+  constructor(private firestore: Firestore) {}
 
   async saveStory(userId: string, story: FireStoreStory): Promise<void> {
-    const app = getApp();
-    const auth = getAuth(app);
-    const storage = getStorage(app);
-    const storiesCollection = collection(this.firestore, `users/${userId}/stories`);
-
-    // 🔹 Ensure the user is authenticated before proceeding
-    if (!auth.currentUser) {
-      console.error("❌ User is not authenticated!");
-      throw new Error("User must be authenticated to save a story.");
-    }
-
-    // 🔹 Refresh authentication token before upload
-    await auth.currentUser.getIdToken(true);
-
-    console.log("🔹 Current User:", auth.currentUser);
-
-    let storyToSave: FireStoreStory = {
+    const auth = getAuth();
+    if (!auth.currentUser || auth.currentUser.uid !== userId) throw new Error('Unauthorized');
+  
+    const storage = getStorage();
+    const storiesCollection = collection(this.firestore, 'stories');
+  
+    // Save story first (without images)
+    const storyToSave: FireStoreStory = {
       title: story.title,
       author: story.author,
       description: story.description,
       createdAt: new Date(),
       updatedAt: new Date(),
+      createdBy: userId,
+      sharedWith: [],
       chapters: [],
       lix: story.lix,
-      image: "" // Placeholder for cover image URL
+      image: ''
     };
-
-    // 🔹 Upload the cover image first (if available)
-    if (story.image && story.image.startsWith("data:image")) {
-      const now = Date.now();
-      const safeTitle = `${encodeURIComponent(story.title).replace(/%20/g, "_")}_${now}`;
-      const coverImagePath = `users/${userId}/stories/${safeTitle}/cover.jpg`;
+  
+    const storyDocRef = await addDoc(storiesCollection, storyToSave);
+    const storyId = storyDocRef.id;
+  
+    // Upload Cover Image (if exists)
+    if (story.image?.startsWith('data:image')) {
+      const coverImagePath = `stories/${userId}/${storyId}/cover.jpg`; // ✅ Includes userId
       const coverImageRef = ref(storage, coverImagePath);
-
-      console.log(`📤 Uploading cover image: ${coverImagePath}`);
-
-      try {
-        await uploadString(coverImageRef, story.image, 'data_url');
-        const downloadURL = await getDownloadURL(coverImageRef);
-
-        const finalUrl = downloadURL.includes("firebasestorage.googleapis.com")
-          ? `${downloadURL}&alt=media`
-          : downloadURL;
-
-        storyToSave.image = finalUrl;
-        console.log(`✅ Cover image uploaded successfully: ${finalUrl}`);
-      } catch (error) {
-        console.error("❌ Cover image upload failed:", error);
-        throw error;
-      }
+      const metadata = { customMetadata: { creator: userId } };
+  
+      await uploadString(coverImageRef, story.image, 'data_url', metadata);
+      storyToSave.image = await getDownloadURL(coverImageRef);
     }
-
-    // 🔹 Upload images for each chapter
-    for (let chapterIndex = 0; chapterIndex < story.chapters.length; chapterIndex++) {
-      let updatedChapter = { ...story.chapters[chapterIndex], images: [] as string[] };
-
-      if (story.chapters[chapterIndex].images && story.chapters[chapterIndex].images.length > 0) {
-        const now = Date.now();
-        for (let imageIndex = 0; imageIndex < story.chapters[chapterIndex].images.length; imageIndex++) {
-          const safeTitle = `${encodeURIComponent(story.title).replace(/%20/g, "_")}_${now}`;
-          const imagePath = `users/${userId}/stories/${safeTitle}/chapter_${chapterIndex}_${imageIndex}.jpg`;
-          const imageRef = ref(storage, imagePath);
-
-          console.log(`📤 Uploading chapter image: ${imagePath}`);
-
-          try {
-            // 🔹 Ensure valid Base64 image before upload
-            if (!story.chapters[chapterIndex].images[imageIndex].startsWith("data:image")) {
-              console.warn(`Invalid Base64 image format. Skipping! Image: ${story.chapters[chapterIndex].images[imageIndex]}`);
-              continue;
-            }
-
-            await uploadString(imageRef, story.chapters[chapterIndex].images[imageIndex], 'data_url');
-            const downloadURL = await getDownloadURL(imageRef);
-
-            const finalUrl = downloadURL.includes("firebasestorage.googleapis.com")
-              ? `${downloadURL}&alt=media`
-              : downloadURL;
-
-            updatedChapter.images.push(finalUrl);
-            console.log(`✅ Chapter image uploaded successfully: ${finalUrl}`);
-          } catch (error) {
-            console.error("❌ Chapter image upload failed:", error);
-            throw error;
+  
+    // Upload Chapter Images (if exists)
+    const updatedChapters = await Promise.all(
+      story.chapters.map(async (chapter, chapterIndex) => {
+        const updatedChapter = { ...chapter, images: [] as string[] };
+  
+        if (chapter.images?.length) {
+          for (let imageIndex = 0; imageIndex < chapter.images.length; imageIndex++) {
+            if (!chapter.images[imageIndex].startsWith('data:image')) continue;
+  
+            const imagePath = `stories/${userId}/${storyId}/chapter_${chapterIndex}_${imageIndex}.jpg`; // ✅ Includes userId
+            const imageRef = ref(storage, imagePath);
+  
+            await uploadString(imageRef, chapter.images[imageIndex], 'data_url');
+            updatedChapter.images.push(await getDownloadURL(imageRef));
           }
         }
-      }
-
-      storyToSave.chapters.push(updatedChapter);
-    }
-
-    // 🔹 Save the modified story with cover & chapter images to Firestore
-    await addDoc(storiesCollection, storyToSave);
-    console.log(`✅ Story saved successfully with cover and chapter images.`);
+        return updatedChapter;
+      })
+    );
+  
+    // Update Firestore with uploaded images
+    await updateDoc(storyDocRef, { image: storyToSave.image, chapters: updatedChapters });
   }
+ 
 
+  async deleteStory(storyId: string) {
+    const auth = getAuth();
+    if (!auth.currentUser) throw new Error('Unauthorized');
 
-  async deleteStory(userId: string, storyId: string) {
-    const app = getApp();
-    const storage = getStorage(app);
+    const storage = getStorage();
+    const storyDocRef = doc(this.firestore, `stories/${storyId}`);
+    const storySnap = await getDoc(storyDocRef);
 
-    const storyDocRef = doc(this.firestore, `users/${userId}/stories/${storyId}`);
-    const chaptersCollection = collection(this.firestore, `users/${userId}/stories/${storyId}/chapters`);
-    const chaptersSnapshot = await getDocs(chaptersCollection);
+    if (!storySnap.exists()) return;
 
-    for (let chapterDoc of chaptersSnapshot.docs) {
-      const chapter = chapterDoc.data(); // Firestore DocumentData
+    const story = storySnap.data() as FireStoreStory;
+    if (story.createdBy !== auth.currentUser.uid) throw new Error('Unauthorized');
 
-      if (chapter['images']) {
-        for (let imageUrl of chapter['images']) {
-          const imageRef = ref(storage, imageUrl);
-          await deleteObject(imageRef);
+    if (story.image) await deleteObject(ref(storage, story.image));
+
+    if (story.chapters?.length) {
+      for (const chapter of story.chapters) {
+        if (chapter.images?.length) {
+          for (const img of chapter.images) {
+            await deleteObject(ref(storage, img));
+          }
         }
       }
     }
 
     await deleteDoc(storyDocRef);
-    console.log(`✅ Story and images deleted successfully.`);
   }
 
-  async getStory(userId: string, storyId: string): Promise<FireStoreStory | null> {
-    const storyDocRef = doc(this.firestore, `users/${userId}/stories/${storyId}`);
+  async getStory(storyId: string): Promise<FireStoreStory | null> {
+    const auth = getAuth();
+    if (!auth.currentUser) throw new Error('Unauthorized');
+
+    const storyDocRef = doc(this.firestore, `stories/${storyId}`);
     const storySnap = await getDoc(storyDocRef);
 
-    if (!storySnap.exists()) {
-      console.error("❌ Story not found");
-      return null;
+    if (!storySnap.exists()) return null;
+
+    const story = storySnap.data() as FireStoreStory;
+    if (story.createdBy !== auth.currentUser.uid && !story.sharedWith.includes(auth.currentUser.uid)) {
+      throw new Error('Unauthorized');
     }
 
-    let storyData = storySnap.data() as FireStoreStory;
-
-    // ✅ Ensure image is included
-    const storyWithImage: FireStoreStory = {
-      ...storyData,
-      image: storyData.image || "" // Default empty string if missing
-    };
-
-    console.log("📥 Fetched story with cover image:", storyWithImage);
-    return storyWithImage;
+    return story;
   }
 
-  getStories(userId: string): Observable<FireStoreStory[]> {
-    const storiesCollection = collection(this.firestore, `users/${userId}/stories`) as CollectionReference<DocumentData>;
+  async getUserFromFirestore(userId: string): Promise<UserModel | null> {
+    const userRef = doc(this.firestore, `users/${userId}`);
+    const userDoc = await getDoc(userRef);
+  
+    if (!userDoc.exists()) return null;
+    
+    return userDoc.data() as UserModel;
+  }
+  
+  getAssignedUsers(): Observable<UserModel[]> {
+    const authInstance = getAuth();
+    const loggedInUser = authInstance.currentUser;
+
+    if (!loggedInUser) {
+      return of([]); // Return empty observable if not authenticated
+    }
+
+    const userDocRef = doc(this.firestore, `users/${loggedInUser.uid}`);
+    const usersRef = collection(this.firestore, 'users') as CollectionReference<UserModel>;
+
+    return new Observable<UserModel[]>(observer => {
+      getDoc(userDocRef).then(userDoc => {
+        if (!userDoc.exists()) {
+          observer.next([]);
+          observer.complete();
+          return;
+        }
+
+        const assignedUserIds = userDoc.data()?.['assignedUsers'] ?? [];
+
+        if (!Array.isArray(assignedUserIds) || assignedUserIds.length === 0) {
+          observer.next([]);
+          observer.complete();
+          return;
+        }
+
+        collectionData(usersRef, { idField: 'uid' }).pipe(
+          map(users => users.filter(user => assignedUserIds.includes(user.uid)))
+        ).subscribe(filteredUsers => {
+          observer.next(filteredUsers);
+          observer.complete();
+        });
+
+      }).catch(error => {
+        observer.error(error);
+      });
+    });
+  }
+
+
+
+  
+  getStoriesForUser(userId: string): Observable<FireStoreStory[]> {
+    const storiesCollection = collection(this.firestore, 'stories') as CollectionReference<FireStoreStory>;
 
     return collectionData(storiesCollection, { idField: 'id' }).pipe(
-      map((stories: DocumentData[]) =>
-        stories.map(story => ({
-          ...story,
-          image: story['image'] || "", // ✅ Ensure cover image is mapped
-          chapters: (story['chapters'] as any[])?.map((chapter: any) => ({
-            ...chapter,
-            images: (chapter['images'] as string[])?.map(img => img.startsWith('http') ? img : null) || []
-          })) || []
-        }) as FireStoreStory)
+      map((stories: FireStoreStory[]) =>
+        stories
+          .filter(story => story.createdBy === userId || story.sharedWith.includes(userId))
+          .map((story) => ({
+            ...story,
+            image: story.image || '',
+            chapters: story.chapters?.map((chapter) => ({
+              ...chapter,
+              images: chapter.images?.filter((img: string) => img.startsWith('http')) || []
+            })) || []
+          }) as FireStoreStory)
       )
     );
+  }
+
+  async updateStorySharing(storyId: string, selectedUserIds: string[]) {
+    const auth = getAuth();
+    if (!auth.currentUser) throw new Error('Unauthorized');
+
+    const storyRef = doc(this.firestore, `stories/${storyId}`);
+    const storySnap = await getDoc(storyRef);
+
+    if (!storySnap.exists()) return;
+
+    const story = storySnap.data() as FireStoreStory;
+    if (story.createdBy !== auth.currentUser.uid) throw new Error('Unauthorized');
+
+    await updateDoc(storyRef, { sharedWith: selectedUserIds });
+  }
+
+  private async setUserRole(user: User, role: string) {
+    if (!user) return;
+
+    const userRef = doc(this.firestore, `users/${user.uid}`);
+    await setDoc(userRef, {
+      uid: user.uid,
+      email: user.email,
+      role: role,
+      assignedUsers: []
+    }, { merge: true });
+  }
+
+  public async checkAndSetUserRole(user: User) {
+    if (!user) return;
+  
+    const userRef = doc(this.firestore, `users/${user.uid}`);
+    const userDoc = await getDoc(userRef);
+    const userData = userDoc.data() as UserModel | undefined;
+  
+    if (!userDoc.exists() || !userData?.role) {
+      await this.setUserRole(user, 'reader');
+    }
   }
 }

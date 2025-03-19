@@ -7,7 +7,9 @@ export interface FireStoreStory {
     author: string;
     image: string;
     description: string;
+    createdBy: string;
     createdAt: Date;   // Timestamp for creation
     updatedAt: Date;   // Timestamp for updates
     lix: number;       // 🔹 Nyt felt til LIX-niveau
+    sharedWith: string[];
 }

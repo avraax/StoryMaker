@@ -16,6 +16,7 @@
       "https://story-maker-373a2.web.app"
     ],
     "responseHeader": [
+      "*",
       "Content-Type",
       "Authorization",
       "x-goog-meta-cache-control",

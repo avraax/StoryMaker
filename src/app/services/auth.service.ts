@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Auth, User, user, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from '@angular/fire/auth';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { FirestoreService } from './firestore.service';
 
 @Injectable({
   providedIn: 'root',
@@ -9,7 +10,7 @@ export class AuthService {
   private userSubject = new BehaviorSubject<User | null>(null);
   user$: Observable<User | null> = this.userSubject.asObservable();
 
-  constructor(private auth: Auth) {
+  constructor(private auth: Auth, private firestoreService: FirestoreService) {
     user(this.auth).subscribe((u) => {
       this.userSubject.next(u);
     });
@@ -18,22 +19,25 @@ export class AuthService {
   async loginWithGoogle() {
     const credential = await signInWithPopup(this.auth, new GoogleAuthProvider());
     this.userSubject.next(credential.user);
+    await this.firestoreService.checkAndSetUserRole(credential.user);
   }
 
   async loginWithFacebook() {
     const credential = await signInWithPopup(this.auth, new FacebookAuthProvider());
     this.userSubject.next(credential.user);
+    await this.firestoreService.checkAndSetUserRole(credential.user);
   }
 
   async loginWithEmail(email: string, password: string) {
     const credential = await signInWithEmailAndPassword(this.auth, email, password);
     this.userSubject.next(credential.user);
+    await this.firestoreService.checkAndSetUserRole(credential.user);
   }
 
   async registerWithEmail(email: string, password: string) {
     const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
-    // await updateProfile(userCredential.user);
     this.userSubject.next(userCredential.user);
+    await this.firestoreService.checkAndSetUserRole(userCredential.user);
   }
 
   getCurrentUser(): User | null {
@@ -43,5 +47,5 @@ export class AuthService {
   async logout() {
     await signOut(this.auth);
     this.userSubject.next(null);
-  }
+  } 
 }

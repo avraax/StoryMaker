@@ -116,43 +116,43 @@ export class StoryComponent implements OnInit, OnDestroy {
   }
 
   async generateStory() {
-    if (!this.inputTopic || !this.selectedLix) {
+    if (!this.inputTopic || !this.selectedLix || !this.user) {
       return;
     }
-
+  
     this.story.next(null);
     this.reset();
     this.totalChapters = this.aiService.totalChapters;
     this.totalTasks = this.totalChapters + 1;
     this.progressDescription = `Genererer kapitel ${(this.chapters.length + 1)} af ${this.totalChapters}`;
-
+  
     try {
       let coverMetadata: { description: string; image: string } | null = null;
-
+  
       for await (let data of this.aiService.generateStoryStream(this.mainCategory, this.subCategory, this.inputTopic, this.selectedLix)) {
         if ('title' in data) {
           this.chapters.push(data);
-
+  
           if (this.chapters.length < this.totalChapters) {
             this.progressDescription = `Genererer kapitel ${(this.chapters.length + 1)} af ${this.totalChapters}`;
           }
-
+  
           this.progressCompletedTasks++;
         } else {
           coverMetadata = data;
         }
-
+  
         if (this.progressCompletedTasks >= this.totalChapters) {
           this.progressDescription = `Gemmer historie`;
         }
       }
-
+  
       if (!coverMetadata) {
         throw new Error("Metadata mangler. Kunne ikke generere beskrivelse og forsidebillede.");
       }
-
+  
       const date = new Date();
-
+  
       this.story.next({
         title: this.inputTopic,
         chapters: this.chapters,
@@ -161,18 +161,20 @@ export class StoryComponent implements OnInit, OnDestroy {
         image: coverMetadata.image,
         createdAt: date,
         updatedAt: date,
-        lix: this.selectedLix
+        lix: this.selectedLix,
+        createdBy: this.user.uid,
+        sharedWith: []
       });
-
+  
     } catch (error) {
       this.reset();
-      console.error('Error generating story:', error);
       throw error;
     }
-
+  
     this.progressCompletedTasks++;
     this.loading = false;
   }
+ 
 
   private reset(): void {
     this.story.next(null);

@@ -23,6 +23,9 @@
         <button mat-icon-button color="warn" (click)="confirmDelete(story.id, story.title)">
           <mat-icon>delete</mat-icon>
         </button>
+        <button mat-icon-button color="primary" (click)="openShareDialog(story)">
+          <mat-icon>share</mat-icon>
+        </button>
         <button mat-icon-button color="primary" (click)="openStoryViewer(story)">
           <mat-icon>fullscreen</mat-icon>
         </button>
@@ -39,6 +42,7 @@
     Ingen historier endnu.
   </p>
 </mat-card>
+
 @if(selectedStory | async) {
-<app-story-viewer [story]="selectedStory" (close)="closeStoryViewer()"></app-story-viewer>
+  <app-story-viewer [story]="selectedStory" (close)="closeStoryViewer()"></app-story-viewer>
 }
