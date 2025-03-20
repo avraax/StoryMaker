@@ -88,12 +88,35 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
 
   public openStoryViewer(story: FireStoreStory) {
     this.selectedStory.next(story);
+    this.enterFullscreen();
   }
-
-  closeStoryViewer() {
+  
+  public closeStoryViewer() {
     this.selectedStory.next(null);
+    this.exitFullscreen();
   }
 
+  private enterFullscreen() {
+    const elem = document.documentElement; // Use entire document as fullscreen target
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if ((elem as any).webkitRequestFullscreen) { /* Safari */
+      (elem as any).webkitRequestFullscreen();
+    } else if ((elem as any).msRequestFullscreen) { /* IE11 */
+      (elem as any).msRequestFullscreen();
+    }
+  }
+  
+  private exitFullscreen() {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if ((document as any).webkitExitFullscreen) { /* Safari */
+      (document as any).webkitExitFullscreen();
+    } else if ((document as any).msExitFullscreen) { /* IE11 */
+      (document as any).msExitFullscreen();
+    }
+  }
+  
   openShareDialog(story: FireStoreStory) {
     const dialogRef = this.dialog.open(ShareStoryDialogComponent, {
       width: '400px',
