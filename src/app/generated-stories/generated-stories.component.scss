@@ -1,6 +1,5 @@
 :host {
-  max-width: 1000px;
-  width: 1000px;
+  width: 100%;
   display: inline-block;
 
   .container {
@@ -11,73 +10,75 @@
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   }
 
-  .story-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-
-    .story-list-header {
-      font-weight: bold;
-      border-bottom: 2px solid #ccc;
-      margin-bottom: 5px;
-    }
-
-    .story-date {
-      color: #666;
-      font-size: 0.9rem;
-    }
-
-    .story-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-
-      button {
-        margin-left: 8px;
-      }
-    }
-  }
-
   table {
     width: 100%;
     border-collapse: collapse;
     background-color: inherit !important;
-  }
+    table-layout: fixed;
+    /* ✅ Prevents stretching and forces column widths */
 
-  /* Table Headers */
-  th {
-    font-weight: bold;
-    padding: 12px;
-    text-align: left;
-    border-bottom: 2px solid #ddd;
+    th {
+      font-weight: bold;
+      padding: 12px;
+      text-align: left;
+      border-bottom: 2px solid #ddd;
 
-    &:last-child {
-      text-align: right;
+      &:last-child {
+        text-align: right;
+      }
+    }
+
+    td {
+      padding: 12px;
+      color: #333;
+      height: 70px;
+
+      &:nth-child(2) {
+        color: #666;
+        font-size: 0.9rem;
+      }
+    }
+
+    tr {
+      transition: background 0.3s;
     }
   }
 
-  /* Table Rows */
-  tr {
-    transition: background 0.3s;
+  /* ✅ Ensures title column respects max width and truncates */
+  td.mat-column-title {
+    max-width: 200px;
+    /* Adjust width as needed */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  /* Table Cells */
-  td {
-    padding: 12px;
-    color: #333;
+  td.actions-cell {
+    white-space: nowrap;
+    text-align: right;
   }
 
-  /* Date Column */
-  td:nth-child(2) {
+  .no-stories {
+    text-align: center;
+    font-size: 1rem;
     color: #666;
-    font-size: 0.9rem;
+    margin-top: 15px;
   }
+}
 
-  /* Actions Column */
-  .actions-cell {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
+/* ✅ Hide "updatedAt" column on screens smaller than 768px */
+@media (max-width: 768px) {
+  :host {
+    mat-card table {
+
+      th.mat-column-updatedAt,
+      td.mat-column-updatedAt {
+        display: none;
+      }
+    }
+
+    .container {
+      padding: 15px 0;
+    }
   }
 }

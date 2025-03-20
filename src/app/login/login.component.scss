@@ -3,58 +3,62 @@
     align-items: center;
     justify-content: center;
     height: inherit;
-}
 
-.login-card {
-    width: 350px;
-    padding: 25px;
-    text-align: center;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-h2 {
-    font-size: 22px;
-    font-weight: bold;
-    color: #2C3E50;
-    margin-bottom: 20px;
-}
-
-.login-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 10px;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 8px;
-    transition: all 0.3s ease-in-out;
-}
-
-button:hover {
-    transform: scale(1.05);
-}
-
-.google-btn {
-    background: #DB4437;
-    color: white;
-}
-
-.facebook-btn {
-    background: #1877F2;
-    color: white;
-}
-
-.icon {
-    width: 24px;
-    height: 24px;
-    margin-right: 10px;
+    .login-card {
+        width: 350px;
+        padding: 25px;
+        text-align: center;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    
+        h2 {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2C3E50;
+            margin-bottom: 20px;
+        }
+    
+        .login-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+    
+            button {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                padding: 10px;
+                font-size: 16px;
+                font-weight: bold;
+                border-radius: 8px;
+                transition: all 0.3s ease-in-out;
+    
+                &:hover {
+                    transform: scale(1.05);
+                }
+            }
+    
+            .google-btn {
+                background: #DB4437;
+                color: white;
+            }
+    
+            .facebook-btn {
+                background: #1877F2;
+                color: white;
+            }
+    
+            .icon {
+                width: 24px;
+                height: 24px;
+                margin-right: 10px;
+            }
+        }
+    
+        .full-width {
+            width: 100%;
+        }
+    }
 }

@@ -1,6 +1,6 @@
 <ng-container *ngIf="storyObj">
     <div class="fullscreen-view">
-        <div class="ipad-container">
+        <div class="fullscreen-view-container">
             <mat-icon class="close-fullscreen-icon" (click)="closeStoryViewer()">close</mat-icon>
             <div class="fullscreen-content">
                 <div #storyContent class="custom-swiper">
@@ -11,7 +11,7 @@
                             <div class="cover-content">
                                 <img *ngIf="storyObj.image" [src]="storyObj.image" class="cover-image" alt="Bogforside">
                                 <h1 class="cover-title">{{ storyObj.title }}</h1>
-                                <h2 class="cover-author">Af: {{ storyObj.author || 'Ukendt forfatter' }}</h2>
+                                <!-- <h2 class="cover-author">Af: {{ storyObj.author || 'Ukendt forfatter' }}</h2> -->
                                 <p class="cover-description">{{ storyObj.description }}</p>
 
                                 <!-- LIX Information -->
@@ -28,7 +28,7 @@
                                     <h3 class="chapter-title">{{ slide.chapterTitle }}</h3>
                                 }
                                 @else {
-                                    <h3 class="chapter-title">&#8203;</h3>
+                                    <!-- <h3 class="chapter-title">&#8203;</h3> -->
                                 }
                                 <div class="chapter-content">
                                     <div class="chapter-layout">

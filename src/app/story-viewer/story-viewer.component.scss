@@ -18,140 +18,116 @@
         align-items: center;
         z-index: 1000;
 
-        .ipad-container {
-            width: 1024px;
-            height: 768px;
+        .fullscreen-view-container {
+            max-width: 1024px;
+            max-height: 768ox;
             background: white;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-        }
-
-        .fullscreen-content {
-            width: 100%;
             height: 100%;
-            overflow: hidden;
-            position: relative; // ✅ Ensures positioning of buttons inside the container
 
-            .custom-swiper {
-                width: 100%;
-                height: 100%;
-                overflow: hidden;
+            .close-fullscreen-icon {
+                z-index: 1;
+                width: 30px;
+                height: 30px;
             }
 
-            .custom-swiper-wrapper {
-                display: flex;
+            .fullscreen-content {
                 width: 100%;
                 height: 100%;
-                transition: transform 0.5s ease-in-out;
-            }
-
-            .custom-swiper-slide {
-                min-width: 100%;
-                height: 100%;
-                display: flex;
-                justify-content: center;
+                position: relative;
                 overflow: hidden;
-                transition: transform 0.5s ease;
 
-                &.cover-page,
-                &.last-page {
+                .custom-swiper {
+                    width: 100%;
+                    height: 100%;
+                }
+
+                .custom-swiper-wrapper {
                     display: flex;
-                    flex-direction: column;
+                    width: 100%;
+                    height: 100%;
+                    transition: transform 0.5s ease-in-out;
+                }
+
+                .custom-swiper-slide {
+                    min-width: 100%;
+                    height: 100%;
+                    display: flex;
                     justify-content: center;
                     align-items: center;
                     text-align: center;
+                    transition: transform 0.5s ease;
 
-                    .cover-image {
-                        max-width: 300px;
-                        max-height: 350px;
-                        height: auto;
-                        margin-bottom: 20px;
-                        border-radius: 8px;
-                    }
+                    &.cover-page,
+                    &.last-page {
+                        flex-direction: column;
 
-                    .cover-title {
-                        font-size: 36px;
-                        font-weight: bold;
-                    }
-
-                    .cover-author {
-                        font-size: 20px;
-                        margin-top: 10px;
-                    }
-
-                    .cover-description {
-                        margin: auto;
-                        font-size: 16px;
-                        margin-top: 20px;
-                        max-width: 80%;
-                        line-height: 1.5;
-                    }
-
-                    .last-content {
-                        text-align: center;
-                    }
-
-                    .pagination-container {
-                        .pagination-controls {
-                            position: absolute;
-                            bottom: 20px;
-                            left: 50%;
-                            transform: translateX(-50%);
-                            display: flex;
-                            align-items: center;
-                            gap: 20px;
-                            z-index: 10;
+                        .cover-image {
+                            max-width: 50vh;
+                            max-height: 50vh;
+                            height: auto;
+                            margin-bottom: 20px;
+                            border-radius: 8px;
                         }
 
-                        .export-button {
+                        .cover-title {
+                            font-size: 1rem;
+                            font-weight: bold;
+                        }
+
+                        .cover-author {
+                            font-size: 20px;
+                            margin-top: 10px;
+                        }
+
+                        .cover-description {
+                            margin: 5px auto;
+                            font-size: 16px;
+                            max-width: 80%;
+                            line-height: 1.5;
+                        }
+                    }
+
+                    .cover-content {
+                        width: 100%;
+
+                        .lix-box {
                             position: absolute;
                             bottom: 20px;
-                            right: 0px;
+                            left: 20px;
+                            font-size: 12px;
+                            padding: 5px 10px;
+                            border-radius: 5px;
                         }
                     }
                 }
 
-                .cover-content {
-                    .lix-box {
+                .pagination-container {
+                    .pagination-controls {
                         position: absolute;
                         bottom: 20px;
-                        left: 20px;
-                        font-size: 12px;
-                        padding: 5px 10px;
-                        border-radius: 5px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        display: flex;
+                        align-items: center;
+                        gap: 30px;
+                        z-index: 10;
+
+                        .page-indicator {
+                            font-size: 18px;
+                            font-weight: bold;
+                        }
+                    }
+
+                    .export-button {
+                        position: absolute;
+                        bottom: 20px;
+                        right: 0px;
                     }
                 }
             }
-        }
-
-        .pagination-container {
-            .pagination-controls {
-                position: absolute;
-                bottom: 20px; // ✅ Keeps it inside the viewport
-                left: 50%;
-                transform: translateX(-50%);
-                display: flex;
-                align-items: center;
-                gap: 30px; // ✅ Adds spacing between buttons
-                z-index: 10;
-
-                .page-indicator {
-                    font-size: 18px;
-                    font-weight: bold;
-                }
-            }
-
-            .export-button {
-                position: absolute;
-                bottom: 20px; // ✅ Aligns with pagination controls
-                right: 0px; // ✅ Exactly 0px from the right
-            }
-        }
-
-        mat-icon {
-            height: 34px;
-            width: 34px;
         }
 
         .close-fullscreen-icon {
@@ -169,60 +145,65 @@
         }
     }
 
-    .chapter-title {
-        font-size: 24px; // Adjusted for iPad readability
-        font-weight: 500;
-        color: #1565C0;
-        margin: 20px 0 0px 0;
-    }
-
     .chapter-container {
         margin-bottom: 30px;
+    }
+
+    .chapter-title {
+        font-size: 24px;
+        font-weight: 500;
+        color: #1565C0;
+        margin: 20px 0;
     }
 
     .chapter-content {
         display: flex;
         justify-content: space-between;
         gap: 20px;
-    }
 
-    .chapter-layout {
-        display: flex;
-    }
+        .chapter-layout {
+            display: flex;
+            margin: 0 10px;
 
-    .chapter-texts {
-        flex: 1 1 60%;
-        font-size: 18px; // Improved readability
-        line-height: 1.5;
-    }
+            .chapter-texts {
+                text-align: left;
+                flex: 1 1 60%;
+                font-size: 16px;
+                line-height: 1.5;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
 
-    .chapter-images {
-        flex: 1 1 40%;
-        display: flex;
-        flex-direction: column;
-        padding: 20px 0 0 10px;
-        border-radius: 8px;
-    }
+            .chapter-images {
+                flex: 1 1 40%;
+                display: flex;
+                flex-direction: column;
+                padding: 20px 0 0 10px;
+                border-radius: 8px;
 
-    .image-row {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 10px;
-    }
+                .image-row {
+                    display: flex;
+                    justify-content: center;
+                    gap: 10px;
+                    margin-bottom: 10px;
 
-    .image-wrapper {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-        max-width: 48%;
-    }
+                    .image-wrapper {
+                        flex: 1;
+                        display: flex;
+                        justify-content: center;
+                        max-width: 48%;
+                    }
 
-    .chapter-image {
-        width: 100%;
-        height: auto;
-        object-fit: contain;
-        border-radius: 5px;
+                    .chapter-image {
+                        width: 100%;
+                        height: auto;
+                        object-fit: contain;
+                        border-radius: 5px;
+                    }
+                }
+            }
+        }
     }
 
     .story-actions {
@@ -234,5 +215,35 @@
         border-radius: 10px;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
         margin-top: 20px;
+    }
+
+    .fullscreen-view .fullscreen-view-container.rotate-landscape {
+        transform: rotate(90deg);
+        transform-origin: center;
+        width: 100vh;
+        height: 100vw;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        translate: -50% -50%;
+        overflow: hidden;
+    }
+}
+
+@media (max-width: 768px) {
+    :host {
+        .fullscreen-view .fullscreen-view-container .fullscreen-content {
+            .pagination-container {
+                display: none;
+            }
+
+            .custom-swiper-slide.cover-page .cover-description {
+                line-height: normal;
+            }
+        }
+
+        p {
+            line-height: normal;
+        }
     }
 }

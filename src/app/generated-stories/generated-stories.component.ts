@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, Renderer2 } from '@angular/core';
 import { FirestoreService } from '../services/firestore.service';
 import { FireStoreStory } from '../models/firestore-story';
 import { MatCardModule } from '@angular/material/card';
@@ -35,8 +35,10 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
   @Input() user: UserModel | undefined;
   stories: FireStoreStory[] = [];
   public selectedStory = new BehaviorSubject<FireStoreStory | null>(null);
+  private orientationChangeListener: (() => void) | null = null;
 
-  constructor(private firestoreService: FirestoreService, private dialog: MatDialog) { }
+  constructor(private firestoreService: FirestoreService, private dialog: MatDialog,
+    private renderer: Renderer2) { }
 
   ngOnInit() {
     this.loadStories();
@@ -59,10 +61,11 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
   refreshStories() {
     this.loadStories();
   }
-  
+
 
   ngOnDestroy(): void {
     this.selectedStory.unsubscribe();
+    this.removeOrientationListener();
   }
 
   confirmDelete(storyId: string, storyTitle: string): void {
@@ -80,7 +83,7 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
 
   async deleteStory(storyId: string | undefined) {
     if (this.user && storyId) {
-      this.firestoreService.deleteStory(this.user.uid).then(() => {
+      this.firestoreService.deleteStory(storyId).then(() => {
         this.stories = this.stories.filter(story => story.id !== storyId);
       })
     }
@@ -89,34 +92,60 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
   public openStoryViewer(story: FireStoreStory) {
     this.selectedStory.next(story);
     this.enterFullscreen();
+    this.addOrientationListener(); // ✅ Start monitoring screen rotation
   }
-  
+
   public closeStoryViewer() {
     this.selectedStory.next(null);
     this.exitFullscreen();
+    this.removeOrientationListener(); // ✅ Stop monitoring screen rotation
   }
 
-  private enterFullscreen() {
-    const elem = document.documentElement; // Use entire document as fullscreen target
+  private async enterFullscreen() {
+    const elem = document.documentElement;
+
     if (elem.requestFullscreen) {
-      elem.requestFullscreen();
+      await elem.requestFullscreen();
     } else if ((elem as any).webkitRequestFullscreen) { /* Safari */
-      (elem as any).webkitRequestFullscreen();
+      await (elem as any).webkitRequestFullscreen();
     } else if ((elem as any).msRequestFullscreen) { /* IE11 */
-      (elem as any).msRequestFullscreen();
+      await (elem as any).msRequestFullscreen();
+    }
+
+    try {
+      if ('orientation' in screen && (screen.orientation as any).lock) {
+        await (screen.orientation as any).lock('landscape');
+        console.log("Orientation locked to landscape");
+      } else {
+        throw new Error("Orientation lock not supported");
+      }
+    } catch (error) {
+      console.warn("Could not lock orientation, checking if CSS fallback is needed:", error);
+      this.applyCssFallback();
     }
   }
-  
-  private exitFullscreen() {
+
+  private async exitFullscreen() {
     if (document.exitFullscreen) {
-      document.exitFullscreen();
+      await document.exitFullscreen();
     } else if ((document as any).webkitExitFullscreen) { /* Safari */
-      (document as any).webkitExitFullscreen();
+      await (document as any).webkitExitFullscreen();
     } else if ((document as any).msExitFullscreen) { /* IE11 */
-      (document as any).msExitFullscreen();
+      await (document as any).msExitFullscreen();
     }
+
+    try {
+      if ('orientation' in screen && (screen.orientation as any).unlock) {
+        (screen.orientation as any).unlock();
+      }
+    } catch (error) {
+      console.warn("Could not unlock orientation:", error);
+    }
+
+    this.removeCssFallback();
   }
-  
+
+
   openShareDialog(story: FireStoreStory) {
     const dialogRef = this.dialog.open(ShareStoryDialogComponent, {
       width: '400px',
@@ -128,5 +157,38 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
         this.firestoreService.updateStorySharing(story.id as string, selectedUserIds);
       }
     });
+  }
+
+  /** ✅ Detect screen orientation & apply/remove CSS */
+  private applyCssFallback() {
+    const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+    const fullscreenContainer = document.querySelector('.fullscreen-view-container');
+
+    if (!isLandscape && fullscreenContainer) {
+      this.renderer.addClass(fullscreenContainer, 'rotate-landscape');
+    } else if (isLandscape && fullscreenContainer) {
+      this.renderer.removeClass(fullscreenContainer, 'rotate-landscape');
+    }
+  }
+
+  private removeCssFallback() {
+    const fullscreenContainer = document.querySelector('.fullscreen-view-container');
+    if (fullscreenContainer) {
+      this.renderer.removeClass(fullscreenContainer, 'rotate-landscape');
+    }
+  }
+
+  /** ✅ Add listener for screen rotation */
+  private addOrientationListener() {
+    this.orientationChangeListener = () => this.applyCssFallback();
+    window.matchMedia("(orientation: landscape)").addEventListener("change", this.orientationChangeListener);
+  }
+
+  /** ✅ Remove listener when fullscreen is closed */
+  private removeOrientationListener() {
+    if (this.orientationChangeListener) {
+      window.matchMedia("(orientation: landscape)").removeEventListener("change", this.orientationChangeListener);
+      this.orientationChangeListener = null;
+    }
   }
 }
