@@ -1,5 +1,4 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { User } from '@angular/fire/auth';
 import { AIService } from './../services/ai.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,6 +17,7 @@ import { ProgressTrackerComponent } from '../progress-tracker/progress-tracker.c
 import { StoryUtilsService } from '../services/story-utils.service';
 import { StoryViewerComponent } from '../story-viewer/story-viewer.component';
 import { BehaviorSubject } from 'rxjs';
+import { UserModel } from '../models/user.model';
 
 @Component({
   selector: 'app-story',
@@ -42,7 +42,7 @@ import { BehaviorSubject } from 'rxjs';
 
 export class StoryComponent implements OnInit, OnDestroy {
   @Output() navigateToGenerated = new EventEmitter<void>(); // Opret event
-  @Input() user: User | undefined;
+  @Input() user: UserModel | undefined;
   story = new BehaviorSubject<FireStoreStory | null>(null);
   mainCategory: string = 'sport';
   subCategory: string = 'Spillere';

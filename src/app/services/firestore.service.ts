@@ -1,26 +1,23 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, addDoc, doc, deleteDoc, getDoc, collectionData, getDocs, updateDoc, DocumentData, CollectionReference, setDoc, DocumentReference } from '@angular/fire/firestore';
-import { getApp } from '@angular/fire/app';
+import { Firestore, collection, addDoc, doc, deleteDoc, getDoc, getDocs, updateDoc, CollectionReference, setDoc } from '@angular/fire/firestore';
 import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from '@angular/fire/storage';
 import { FireStoreStory } from '../models/firestore-story';
-import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { getAuth, User } from '@angular/fire/auth';
+import { getAuth } from '@angular/fire/auth';
 import { UserModel } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FirestoreService {
-  constructor(private firestore: Firestore) {}
+  constructor(private firestore: Firestore) { }
 
   async saveStory(userId: string, story: FireStoreStory): Promise<void> {
     const auth = getAuth();
     if (!auth.currentUser || auth.currentUser.uid !== userId) throw new Error('Unauthorized');
-  
+
     const storage = getStorage();
     const storiesCollection = collection(this.firestore, 'stories');
-  
+
     // Save story first (without images)
     const storyToSave: FireStoreStory = {
       title: story.title,
@@ -34,32 +31,32 @@ export class FirestoreService {
       lix: story.lix,
       image: ''
     };
-  
+
     const storyDocRef = await addDoc(storiesCollection, storyToSave);
     const storyId = storyDocRef.id;
-  
+
     // Upload Cover Image (if exists)
     if (story.image?.startsWith('data:image')) {
       const coverImagePath = `stories/${userId}/${storyId}/cover.jpg`; // ✅ Includes userId
       const coverImageRef = ref(storage, coverImagePath);
       const metadata = { customMetadata: { creator: userId } };
-  
+
       await uploadString(coverImageRef, story.image, 'data_url', metadata);
       storyToSave.image = await getDownloadURL(coverImageRef);
     }
-  
+
     // Upload Chapter Images (if exists)
     const updatedChapters = await Promise.all(
       story.chapters.map(async (chapter, chapterIndex) => {
         const updatedChapter = { ...chapter, images: [] as string[] };
-  
+
         if (chapter.images?.length) {
           for (let imageIndex = 0; imageIndex < chapter.images.length; imageIndex++) {
             if (!chapter.images[imageIndex].startsWith('data:image')) continue;
-  
+
             const imagePath = `stories/${userId}/${storyId}/chapter_${chapterIndex}_${imageIndex}.jpg`; // ✅ Includes userId
             const imageRef = ref(storage, imagePath);
-  
+
             await uploadString(imageRef, chapter.images[imageIndex], 'data_url');
             updatedChapter.images.push(await getDownloadURL(imageRef));
           }
@@ -67,11 +64,11 @@ export class FirestoreService {
         return updatedChapter;
       })
     );
-  
+
     // Update Firestore with uploaded images
     await updateDoc(storyDocRef, { image: storyToSave.image, chapters: updatedChapters });
   }
- 
+
 
   async deleteStory(storyId: string) {
     const auth = getAuth();
@@ -101,7 +98,7 @@ export class FirestoreService {
     await deleteDoc(storyDocRef);
   }
 
-  async getStory(storyId: string): Promise<FireStoreStory | null> {
+  async getStoryById(storyId: string): Promise<FireStoreStory | null> {
     const auth = getAuth();
     if (!auth.currentUser) throw new Error('Unauthorized');
 
@@ -121,72 +118,68 @@ export class FirestoreService {
   async getUserFromFirestore(userId: string): Promise<UserModel | null> {
     const userRef = doc(this.firestore, `users/${userId}`);
     const userDoc = await getDoc(userRef);
-  
+
     if (!userDoc.exists()) return null;
-    
+
     return userDoc.data() as UserModel;
   }
-  
-  getAssignedUsers(): Observable<UserModel[]> {
+
+  async getAssignedUsers(): Promise<UserModel[]> {
     const authInstance = getAuth();
     const loggedInUser = authInstance.currentUser;
 
     if (!loggedInUser) {
-      return of([]); // Return empty observable if not authenticated
+      return [];
     }
 
-    const userDocRef = doc(this.firestore, `users/${loggedInUser.uid}`);
-    const usersRef = collection(this.firestore, 'users') as CollectionReference<UserModel>;
+    try {
+      const userDocRef = doc(this.firestore, `users/${loggedInUser.uid}`);
+      const userDoc = await getDoc(userDocRef);
 
-    return new Observable<UserModel[]>(observer => {
-      getDoc(userDocRef).then(userDoc => {
-        if (!userDoc.exists()) {
-          observer.next([]);
-          observer.complete();
-          return;
-        }
+      if (!userDoc.exists()) {
+        return [];
+      }
 
-        const assignedUserIds = userDoc.data()?.['assignedUsers'] ?? [];
+      const assignedUserIds: string[] = userDoc.data()?.['assignedUsers'] ?? [];
 
-        if (!Array.isArray(assignedUserIds) || assignedUserIds.length === 0) {
-          observer.next([]);
-          observer.complete();
-          return;
-        }
+      if (!Array.isArray(assignedUserIds) || assignedUserIds.length === 0) {
+        return [];
+      }
 
-        collectionData(usersRef, { idField: 'uid' }).pipe(
-          map(users => users.filter(user => assignedUserIds.includes(user.uid)))
-        ).subscribe(filteredUsers => {
-          observer.next(filteredUsers);
-          observer.complete();
-        });
+      const usersRef = collection(this.firestore, 'users') as CollectionReference<UserModel>;
+      const users = await getDocs(usersRef);
 
-      }).catch(error => {
-        observer.error(error);
-      });
-    });
+      return users.docs
+        .map(doc => ({ ...doc.data(), uid: doc.id }))
+        .filter(user => assignedUserIds.includes(user.uid));
+
+    } catch (error) {
+      console.error("Error fetching assigned users:", error);
+      return [];
+    }
   }
 
-
-
-  
-  getStoriesForUser(userId: string): Observable<FireStoreStory[]> {
+  async getStoriesForUser(userId: string): Promise<FireStoreStory[]> {
     const storiesCollection = collection(this.firestore, 'stories') as CollectionReference<FireStoreStory>;
 
-    return collectionData(storiesCollection, { idField: 'id' }).pipe(
-      map((stories: FireStoreStory[]) =>
-        stories
-          .filter(story => story.createdBy === userId || story.sharedWith.includes(userId))
-          .map((story) => ({
-            ...story,
-            image: story.image || '',
-            chapters: story.chapters?.map((chapter) => ({
-              ...chapter,
-              images: chapter.images?.filter((img: string) => img.startsWith('http')) || []
-            })) || []
-          }) as FireStoreStory)
-      )
-    );
+    try {
+      const storiesSnapshot = await getDocs(storiesCollection);
+
+      return storiesSnapshot.docs
+        .map(doc => ({ ...doc.data(), id: doc.id }))
+        .filter(story => story.createdBy === userId || story.sharedWith.includes(userId))
+        .map(story => ({
+          ...story,
+          image: story.image || '',
+          chapters: story.chapters?.map(chapter => ({
+            ...chapter,
+            images: chapter.images?.filter(img => img.startsWith('http')) || []
+          })) || []
+        }));
+    } catch (error) {
+      console.error("Error fetching stories for user:", error);
+      return [];
+    }
   }
 
   async updateStorySharing(storyId: string, selectedUserIds: string[]) {
@@ -204,7 +197,7 @@ export class FirestoreService {
     await updateDoc(storyRef, { sharedWith: selectedUserIds });
   }
 
-  private async setUserRole(user: User, role: string) {
+  private async setUserRole(user: UserModel, role: string) {
     if (!user) return;
 
     const userRef = doc(this.firestore, `users/${user.uid}`);
@@ -216,13 +209,31 @@ export class FirestoreService {
     }, { merge: true });
   }
 
-  public async checkAndSetUserRole(user: User) {
+  async getUserRole(userId: string): Promise<string> {
+    try {
+      const userRef = doc(this.firestore, `users/${userId}`);
+      const userDoc = await getDoc(userRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data() as UserModel;
+        return userData.role || 'reader'; // Default role if missing
+      }
+
+      return 'reader'; // Default role for new users
+    } catch (error) {
+      console.error("Error fetching user role:", error);
+      return 'reader'; // Fallback role
+    }
+  }
+
+
+  public async checkAndSetUserRole(user: UserModel) {
     if (!user) return;
-  
+
     const userRef = doc(this.firestore, `users/${user.uid}`);
     const userDoc = await getDoc(userRef);
     const userData = userDoc.data() as UserModel | undefined;
-  
+
     if (!userDoc.exists() || !userData?.role) {
       await this.setUserRole(user, 'reader');
     }

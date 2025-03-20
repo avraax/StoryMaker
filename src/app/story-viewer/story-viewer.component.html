@@ -71,7 +71,9 @@
                             Næste
                         </button>
                     </div>
-                    <button mat-raised-button color="accent" class="export-button" (click)="exportToPDF()">Eksporter til PDF</button>
+                    @if(user?.role === 'administrator') {
+                        <button mat-raised-button color="accent" class="export-button" (click)="exportToPDF()">Eksporter til PDF</button>
+                    }
                 </div>
             </div>
         </div>

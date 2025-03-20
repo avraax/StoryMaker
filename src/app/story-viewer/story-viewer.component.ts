@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { StoryUtilsService } from '../services/story-utils.service';
 import { BehaviorSubject } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
+import { UserModel } from '../models/user.model';
 
 interface StorySlide {
   chapterTitle: string;
@@ -20,8 +21,9 @@ interface StorySlide {
   templateUrl: './story-viewer.component.html',
   styleUrls: ['./story-viewer.component.scss']
 })
-export class StoryViewerComponent implements OnInit, AfterViewInit {
+export class StoryViewerComponent implements OnInit {
   @Input() story = new BehaviorSubject<FireStoreStory | null>(null);
+  @Input() user: UserModel | undefined;
   storyObj: FireStoreStory | null | undefined;
   @Output() close = new EventEmitter<void>();
   @ViewChild('storyContent', { static: false }) storyContentRef!: ElementRef;
@@ -42,8 +44,6 @@ export class StoryViewerComponent implements OnInit, AfterViewInit {
       this.totalPages = this.chapterSlides.length + 2; // Cover + Slides + End Page
     });
   }
-
-  ngAfterViewInit() { }
 
   closeStoryViewer() {
     this.close.emit();

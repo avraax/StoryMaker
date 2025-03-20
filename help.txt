@@ -1,0 +1,11 @@
+Get and set CORS
+
+gsutil cors get gs://story-maker-373a2.appspot.com
+gsutil cors set cors.json gs://story-maker-373a2.appspot.com
+
+Get storage rules
+firebase storage:rules:get > storage.rules
+
+Certificate
+mkcert -install
+mkcert localhost

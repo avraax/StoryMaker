@@ -8,9 +8,9 @@ import { ImageService } from './image.service';
   providedIn: 'root',
 })
 export class AIService {
-  totalChapters: number = 1;
-  maxTokensPerRequest: number = 1096; // Maksimale tokens pr. kald = 4096
-  imagesPerChapter: number = 1;
+  totalChapters: number = 5;
+  maxTokensPerRequest: number = 4096; // Maksimale tokens pr. kald = 4096
+  imagesPerChapter: number = 10;
 
   constructor(private imageService: ImageService) {}
 
@@ -184,9 +184,9 @@ export class AIService {
     if (!storySoFar.trim()) {
       throw new Error("Historien er tom, kan ikke generere metadata.");
     }
-
+  
     let lixDescription = this.getLixDescription(lix);
-
+  
     const response = await axios.post(
       environment.openAIConfig.apiUrl,
       {
@@ -195,61 +195,62 @@ export class AIService {
           {
             role: 'system',
             content: `
-              Genererer en meget kort og fængende bogbeskrivelse på dansk med en LIX-score på ${lix}.
-              ${lixDescription}
-              Brug historieteksten til at opsummere temaet kort og præcist.
-  
-              🔹 **Output-krav**:
-              1. Returnér udelukkende et JSON-objekt, intet andet tekst.
-              2. Strukturen skal være:
-                 {
-                   "description": "Meget kort bogbeskrivelse"
-                 }
-              3. **Ingen ekstra forklaringer, kun JSON!**
+              Du er en assistent, der skal generere en **meget kort og præcis bogbeskrivelse** på dansk.
+              - Den skal have en **LIX-score på ${lix}**.
+              - ${lixDescription}
+              - **Returnér kun JSON**.
+              - **Formatkrav**:
+                {
+                  "description": "En kort bogbeskrivelse"
+                }
+              - **Ingen billeder, ingen ekstra forklaringer.**
             `
           },
           {
             role: 'user',
             content: `
-              Generér metadata for en bog med titlen **${storyTitle}**.
+              Generér en **kort bogbeskrivelse** for en bog med titlen **"${storyTitle}"**.
   
-              🔹 **Generér en kort bogbeskrivelse** på 20 ord, som opsummerer historiens indhold.
-              🔹 **Generér en billedbeskrivelse**, der kan bruges til en Google-billedsøgning til et billede til forsideillustration.
-    
+              🔹 **Beskrivelse skal være på maks 20 ord.**
+              🔹 Brug kun **valid JSON**.
+              🔹 **Undgå "book_description" eller "image_description" – returnér kun et JSON-objekt med "description".**
+              
               Historieindhold:
               ${storySoFar.substring(0, 5000)}
   
-              Husk: Returnér **kun** gyldig JSON, uden ekstra tekst.
+              Husk: Returnér **kun** JSON-objektet uden ekstra forklaringer.
             `.trim()
           }
         ],
-        max_tokens: 800
+        max_tokens: 150
       },
       {
         headers: { Authorization: `Bearer ${environment.openAIConfig.apiKey}`, 'Content-Type': 'application/json' }
       }
     );
-
+  
     const jsonResponse = response.data.choices[0].message.content.trim();
-
+  
     // 🔹 Validate JSON format before parsing
     if (!jsonResponse.startsWith("{") || !jsonResponse.endsWith("}")) {
       console.error("❌ AI response is not valid JSON:", jsonResponse);
       throw new Error("Fejl i AI-output: Modtaget data er ikke valid JSON.");
     }
-
+  
     try {
       const metadata = JSON.parse(jsonResponse);
+      
       if (!metadata.description) {
-        throw new Error("Manglende felter i metadata.");
+        throw new Error("❌ AI mangler 'description' feltet i metadata.");
       }
+  
       return metadata;
     } catch (error) {
       console.error("❌ Fejl ved parsing af AI-metadata:", error, "Modtaget output:", jsonResponse);
       throw new Error("Fejl i AI-output, kunne ikke parse JSON.");
     }
   }
-
+  
   private getRoleInstructions(i: number, chapterCount: number): string {
     if (i === 1) {
       return `

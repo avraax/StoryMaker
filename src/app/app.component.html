@@ -4,7 +4,7 @@
   <div class="header" *ngIf="user">
     <h1 class="title">Story Maker</h1>
 
-    <div class="profile-info" *ngIf="user">
+    <div class="profile-info">
       <span class="username">{{ user.displayName || user.email }}</span>
       <img *ngIf="user.photoURL" [src]="user.photoURL" class="profile-pic">
       <button mat-raised-button color="warn" (click)="logout()">Logout</button>
@@ -12,14 +12,21 @@
   </div>
 
   <div class="content" *ngIf="user">
-    <mat-tab-group #tabs [(selectedIndex)]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
-      <mat-tab label="Opret Historie">
-        <app-story [user]="user" (navigateToGenerated)="switchToGeneratedStories()"></app-story>
-      </mat-tab>
-
-      <mat-tab label="Mine Historier">
-        <app-generated-stories [user]="user"></app-generated-stories>
-      </mat-tab>
-    </mat-tab-group>
+    
+    @if (user.role === 'administrator' || user.role === 'contributor') {
+      <mat-tab-group #tabs [(selectedIndex)]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
+        <mat-tab label="Opret Historie">
+          <app-story [user]="user" (navigateToGenerated)="switchToGeneratedStories()"></app-story>
+        </mat-tab>
+        <mat-tab label="Mine Historier">
+          <app-generated-stories [user]="user"></app-generated-stories>
+        </mat-tab>
+      </mat-tab-group>
+    } @else {
+      <!-- Show "Mine Historier" outside tab group -->
+      <!-- <h2>Mine Historier</h2> -->
+      <app-generated-stories [user]="user"></app-generated-stories>
+    }
+    
   </div>
 </div>

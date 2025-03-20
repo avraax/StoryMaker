@@ -15,10 +15,10 @@ export class DeleteConfirmationDialogComponent {
   ) {}
 
   onCancel(): void {
-    this.dialogRef.close(false); // User clicked "Cancel"
+    this.dialogRef.close(false);
   }
 
   onConfirm(): void {
-    this.dialogRef.close(true); // User confirmed deletion
+    this.dialogRef.close(true);
   }
 }

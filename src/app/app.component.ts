@@ -1,5 +1,4 @@
-import { Component } from '@angular/core';
-import { User } from '@angular/fire/auth';
+import { Component, ViewChild } from '@angular/core';
 import { AuthService } from './services/auth.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -8,6 +7,7 @@ import { GeneratedStoriesComponent } from './generated-stories/generated-stories
 import { MatCardModule } from '@angular/material/card';
 import { LoginComponent } from './login/login.component';
 import { MatTabsModule } from '@angular/material/tabs';
+import { UserModel } from './models/user.model';
 
 @Component({
   selector: 'app-root',
@@ -25,7 +25,8 @@ import { MatTabsModule } from '@angular/material/tabs';
   styleUrls: ["app.component.scss"]
 })
 export class AppComponent {
-  user: User | null = null;
+  @ViewChild(GeneratedStoriesComponent) generatedStoriesComponent!: GeneratedStoriesComponent;
+  user: UserModel | null = null;
   email = '';
   password = '';
   showSavedStories = false;
@@ -44,6 +45,11 @@ export class AppComponent {
   }
 
   onTabChange(index: number) {
+    if (index === 1) { // "Mine Historier" tab
+      if (this.generatedStoriesComponent) {
+        this.generatedStoriesComponent.refreshStories(); // Trigger refresh
+      }
+    }
     if (index === 0) {
       this.allowTabSwitch = true;
     }

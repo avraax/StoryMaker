@@ -1,5 +1,4 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
-import { User } from '@angular/fire/auth';
 import { FirestoreService } from '../services/firestore.service';
 import { FireStoreStory } from '../models/firestore-story';
 import { MatCardModule } from '@angular/material/card';
@@ -14,6 +13,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { DeleteConfirmationDialogComponent } from '../delete-confirmation-dialog/delete-confirmation-dialog.component';
 import { ShareStoryDialogComponent } from '../share-story-dialog/share-story-dialog.component';
+import { UserModel } from '../models/user.model';
 
 @Component({
   selector: 'app-generated-stories',
@@ -32,15 +32,19 @@ import { ShareStoryDialogComponent } from '../share-story-dialog/share-story-dia
   styleUrls: ["generated-stories.component.scss"]
 })
 export class GeneratedStoriesComponent implements OnInit, OnDestroy {
-  @Input() user: User | undefined;
+  @Input() user: UserModel | undefined;
   stories: FireStoreStory[] = [];
   public selectedStory = new BehaviorSubject<FireStoreStory | null>(null);
 
   constructor(private firestoreService: FirestoreService, private dialog: MatDialog) { }
 
   ngOnInit() {
+    this.loadStories();
+  }
+
+  loadStories() {
     if (this.user) {
-      this.firestoreService.getStoriesForUser(this.user.uid).subscribe(stories => {
+      this.firestoreService.getStoriesForUser(this.user.uid).then(stories => {
         this.stories = stories.map(story => ({
           ...story,
           image: story.image || "",
@@ -50,6 +54,10 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
         })).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
       });
     }
+  }
+
+  refreshStories() {
+    this.loadStories();
   }
   
 
@@ -72,8 +80,9 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
 
   async deleteStory(storyId: string | undefined) {
     if (this.user && storyId) {
-      await this.firestoreService.deleteStory(this.user.uid);
-      this.stories = this.stories.filter(story => story.id !== storyId);
+      this.firestoreService.deleteStory(this.user.uid).then(() => {
+        this.stories = this.stories.filter(story => story.id !== storyId);
+      })
     }
   }
 
