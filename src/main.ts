@@ -1,16 +1,23 @@
+import { initializeApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { AppComponent } from './app/app.component';
-import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
-import { provideAuth, getAuth } from '@angular/fire/auth';
-import { provideFirestore, getFirestore } from '@angular/fire/firestore';
-import { provideAnalytics, getAnalytics } from '@angular/fire/analytics';
+import { appConfig } from './app/app.config';
 import { environment } from './environments/environment';
 
-bootstrapApplication(AppComponent, {
-  providers: [
-    provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
-    provideAuth(() => getAuth()),
-    provideFirestore(() => getFirestore()),
-    provideAnalytics(() => getAnalytics())
-  ]
-}).catch(err => console.error(err));
+const firebaseApp = initializeApp(environment.firebaseConfig);
+
+const waitForFirebaseAuth = (): Promise<void> => {
+  return new Promise((resolve) => {
+    const auth = getAuth(firebaseApp);
+    const unsubscribe = onAuthStateChanged(auth, () => {
+      unsubscribe();
+      resolve();
+    });
+  });
+};
+
+waitForFirebaseAuth().then(() => {
+  bootstrapApplication(AppComponent, appConfig)
+    .catch(err => console.error(err));
+});

@@ -1,9 +1,9 @@
 import { Component, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
-import { FirestoreService } from '../services/firestore.service';
+import { FirestoreService } from '../../services/firestore.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
-import { UserShareModel } from '../models/user-share.model';
+import { UserShareModel } from '../../models/user-share.model';
 
 @Component({
   selector: 'app-share-story-dialog',
@@ -35,7 +35,7 @@ export class ShareStoryDialogComponent {
       this.assignedUsers = users.map(user => ({
         uid: user.uid,
         email: user.email,
-        selected: this.data.story.sharedWith.includes(user.uid), // Now uses latest sharedWith
+        selected: this.data.story.sharedWith.includes(user.email), // Now uses latest sharedWith
         role: typeof user.role === 'string' ? user.role : '',
         assignedUsers: Array.isArray(user.assignedUsers) ? user.assignedUsers : []
       })) as UserShareModel[];
@@ -45,8 +45,8 @@ export class ShareStoryDialogComponent {
   }
 
   saveSharing() {
-    const selectedUserIds = this.assignedUsers.filter(user => user.selected).map(user => user.uid);
-    this.dialogRef.close(selectedUserIds);
+    const assignedUsers = this.assignedUsers.filter(user => user.selected);
+    this.dialogRef.close(assignedUsers);
   }
 
   closeDialog() {

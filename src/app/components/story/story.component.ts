@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { AIService } from './../services/ai.service';
+import { AIService } from '../../services/ai.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
@@ -10,14 +10,14 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FirestoreService } from '../services/firestore.service';
-import { StoryChapter } from '../models/story-chapter';
-import { FireStoreStory } from '../models/firestore-story';
+import { FirestoreService } from '../../services/firestore.service';
+import { StoryChapter } from '../../models/story-chapter';
+import { FireStoreStory } from '../../models/firestore-story';
 import { ProgressTrackerComponent } from '../progress-tracker/progress-tracker.component';
-import { StoryUtilsService } from '../services/story-utils.service';
+import { StoryUtilsService } from '../../utils/story-utils.service';
 import { StoryViewerComponent } from '../story-viewer/story-viewer.component';
 import { BehaviorSubject } from 'rxjs';
-import { UserModel } from '../models/user.model';
+import { UserModel } from '../../models/user.model';
 
 @Component({
   selector: 'app-story',
@@ -37,12 +37,12 @@ import { UserModel } from '../models/user.model';
     StoryViewerComponent
   ],
   templateUrl: "story.component.html",
-  styleUrls: ["story.component.scss"]
+  styleUrls: ["story.component.scss"],
 })
 
 export class StoryComponent implements OnInit, OnDestroy {
   @Output() navigateToGenerated = new EventEmitter<void>(); // Opret event
-  @Input() user: UserModel | undefined;
+  @Input() user: UserModel | undefined | null;
   story = new BehaviorSubject<FireStoreStory | null>(null);
   mainCategory: string = 'sport';
   subCategory: string = 'Spillere';
@@ -119,40 +119,40 @@ export class StoryComponent implements OnInit, OnDestroy {
     if (!this.inputTopic || !this.selectedLix || !this.user) {
       return;
     }
-  
+
     this.story.next(null);
     this.reset();
     this.totalChapters = this.aiService.totalChapters;
     this.totalTasks = this.totalChapters + 1;
     this.progressDescription = `Genererer kapitel ${(this.chapters.length + 1)} af ${this.totalChapters}`;
-  
+
     try {
       let coverMetadata: { description: string; image: string } | null = null;
-  
+
       for await (let data of this.aiService.generateStoryStream(this.mainCategory, this.subCategory, this.inputTopic, this.selectedLix)) {
         if ('title' in data) {
           this.chapters.push(data);
-  
+
           if (this.chapters.length < this.totalChapters) {
             this.progressDescription = `Genererer kapitel ${(this.chapters.length + 1)} af ${this.totalChapters}`;
           }
-  
+
           this.progressCompletedTasks++;
         } else {
           coverMetadata = data;
         }
-  
+
         if (this.progressCompletedTasks >= this.totalChapters) {
           this.progressDescription = `Gemmer historie`;
         }
       }
-  
+
       if (!coverMetadata) {
         throw new Error("Metadata mangler. Kunne ikke generere beskrivelse og forsidebillede.");
       }
-  
+
       const date = new Date();
-  
+
       this.story.next({
         title: this.inputTopic,
         chapters: this.chapters,
@@ -165,16 +165,16 @@ export class StoryComponent implements OnInit, OnDestroy {
         createdBy: this.user.uid,
         sharedWith: []
       });
-  
+
     } catch (error) {
       this.reset();
       throw error;
     }
-  
+
     this.progressCompletedTasks++;
     this.loading = false;
   }
- 
+
 
   private reset(): void {
     this.story.next(null);

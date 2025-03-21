@@ -1,6 +1,6 @@
 import { Component, Input, OnDestroy, OnInit, Renderer2 } from '@angular/core';
-import { FirestoreService } from '../services/firestore.service';
-import { FireStoreStory } from '../models/firestore-story';
+import { FirestoreService } from '../../services/firestore.service';
+import { FireStoreStory } from '../../models/firestore-story';
 import { MatCardModule } from '@angular/material/card';
 import { MatListModule } from '@angular/material/list';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,7 +13,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { DeleteConfirmationDialogComponent } from '../delete-confirmation-dialog/delete-confirmation-dialog.component';
 import { ShareStoryDialogComponent } from '../share-story-dialog/share-story-dialog.component';
-import { UserModel } from '../models/user.model';
+import { UserModel } from '../../models/user.model';
+import { UserShareModel } from '../../models/user-share.model';
 
 @Component({
   selector: 'app-generated-stories',
@@ -32,7 +33,7 @@ import { UserModel } from '../models/user.model';
   styleUrls: ["generated-stories.component.scss"]
 })
 export class GeneratedStoriesComponent implements OnInit, OnDestroy {
-  @Input() user: UserModel | undefined;
+  @Input() user: UserModel | undefined | null;
   stories: FireStoreStory[] = [];
   public selectedStory = new BehaviorSubject<FireStoreStory | null>(null);
   private orientationChangeListener: (() => void) | null = null;
@@ -46,7 +47,7 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
 
   loadStories() {
     if (this.user) {
-      this.firestoreService.getStoriesForUser(this.user.uid).then(stories => {
+      this.firestoreService.getStoriesForUser(this.user).then(stories => {
         this.stories = stories.map(story => ({
           ...story,
           image: story.image || "",
@@ -152,9 +153,9 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
       data: { story }
     });
 
-    dialogRef.afterClosed().subscribe(selectedUserIds => {
-      if (selectedUserIds !== undefined) {
-        this.firestoreService.updateStorySharing(story.id as string, selectedUserIds);
+    dialogRef.afterClosed().subscribe((assignedUsers: UserShareModel[]) => {
+      if (assignedUsers !== undefined) {
+        this.firestoreService.updateStorySharing(story.id as string, assignedUsers);
       }
     });
   }

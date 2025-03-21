@@ -1,11 +1,11 @@
 import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, AfterViewInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FireStoreStory } from '../models/firestore-story';
+import { FireStoreStory } from '../../models/firestore-story';
 import { MatIconModule } from '@angular/material/icon';
-import { StoryUtilsService } from '../services/story-utils.service';
+import { StoryUtilsService } from '../../utils/story-utils.service';
 import { BehaviorSubject } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
-import { UserModel } from '../models/user.model';
+import { UserModel } from '../../models/user.model';
 
 interface StorySlide {
   chapterTitle: string;
@@ -23,7 +23,7 @@ interface StorySlide {
 })
 export class StoryViewerComponent implements OnInit {
   @Input() story = new BehaviorSubject<FireStoreStory | null>(null);
-  @Input() user: UserModel | undefined;
+  @Input() user: UserModel | undefined | null;
   storyObj: FireStoreStory | null | undefined;
   @Output() close = new EventEmitter<void>();
   @ViewChild('storyContent', { static: false }) storyContentRef!: ElementRef;

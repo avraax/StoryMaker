@@ -1,64 +1,90 @@
 :host {
     display: flex;
-    align-items: center;
     justify-content: center;
-    height: inherit;
+    padding: 20px;
+    top: calc(100vh - 95%);
+    position: relative;
 
     .login-card {
-        width: 350px;
-        padding: 25px;
+        width: 400px;
+        padding: 30px;
         text-align: center;
         background: white;
         border-radius: 12px;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        max-height: none; // Prevents scrollbar
+
         h2 {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: bold;
             color: #2C3E50;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
-    
+
+        mat-tab-group {
+            width: 100%;
+        }
+
         .login-buttons {
             display: flex;
             flex-direction: column;
             gap: 15px;
-    
+            padding: 10px 0;
+
             button {
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 width: 100%;
-                padding: 10px;
+                padding: 12px;
                 font-size: 16px;
                 font-weight: bold;
                 border-radius: 8px;
                 transition: all 0.3s ease-in-out;
-    
-                &:hover {
-                    transform: scale(1.05);
+            }
+
+            form {
+                mat-form-field {
+                    width: 100%;
+                    margin-bottom: 20px;
                 }
             }
-    
+
             .google-btn {
                 background: #DB4437;
                 color: white;
             }
-    
+
             .facebook-btn {
                 background: #1877F2;
                 color: white;
             }
-    
+
             .icon {
                 width: 24px;
                 height: 24px;
                 margin-right: 10px;
             }
+
+            .error-msg {
+                color: #d32f2f;
+                font-weight: 500;
+                margin-top: 10px;
+            }
         }
-    
+
         .full-width {
             width: 100%;
+        }
+
+        mat-error {
+            color: #d32f2f;
+            font-size: 14px;
+            margin-top: 5px;
+            display: block;
         }
     }
 }

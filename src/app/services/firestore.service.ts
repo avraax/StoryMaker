@@ -4,6 +4,7 @@ import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from '@an
 import { FireStoreStory } from '../models/firestore-story';
 import { getAuth } from '@angular/fire/auth';
 import { UserModel } from '../models/user.model';
+import { UserShareModel } from '../models/user-share.model';
 
 @Injectable({
   providedIn: 'root'
@@ -159,7 +160,7 @@ export class FirestoreService {
     }
   }
 
-  async getStoriesForUser(userId: string): Promise<FireStoreStory[]> {
+  async getStoriesForUser(user: UserModel): Promise<FireStoreStory[]> {
     const storiesCollection = collection(this.firestore, 'stories') as CollectionReference<FireStoreStory>;
 
     try {
@@ -167,7 +168,7 @@ export class FirestoreService {
 
       return storiesSnapshot.docs
         .map(doc => ({ ...doc.data(), id: doc.id }))
-        .filter(story => story.createdBy === userId || story.sharedWith.includes(userId))
+        .filter(story => story.createdBy === user.uid || story.sharedWith.includes(user.email))
         .map(story => ({
           ...story,
           image: story.image || '',
@@ -182,7 +183,7 @@ export class FirestoreService {
     }
   }
 
-  async updateStorySharing(storyId: string, selectedUserIds: string[]) {
+  async updateStorySharing(storyId: string, assignedUsers: UserShareModel[]) {
     const auth = getAuth();
     if (!auth.currentUser) throw new Error('Unauthorized');
 
@@ -194,7 +195,7 @@ export class FirestoreService {
     const story = storySnap.data() as FireStoreStory;
     if (story.createdBy !== auth.currentUser.uid) throw new Error('Unauthorized');
 
-    await updateDoc(storyRef, { sharedWith: selectedUserIds });
+    await updateDoc(storyRef, { sharedWith: assignedUsers.map(x => x.email) });
   }
 
   private async setUserRole(user: UserModel, role: string) {
@@ -226,6 +227,19 @@ export class FirestoreService {
     }
   }
 
+  async getUserByEmail(email: string): Promise<UserModel | null> {
+    const usersRef = collection(this.firestore, 'users') as CollectionReference<UserModel>;
+    const snapshot = await getDocs(usersRef);
+  
+    for (const docSnap of snapshot.docs) {
+      const userData = docSnap.data();
+      if (userData.email === email) {
+        return { ...userData, uid: docSnap.id };
+      }
+    }
+  
+    return null;
+  }
 
   public async checkAndSetUserRole(user: UserModel) {
     if (!user) return;

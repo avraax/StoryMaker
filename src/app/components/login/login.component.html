@@ -1,0 +1,95 @@
+<mat-card class="login-card">
+  <h2>Velkommen</h2>
+
+  <mat-tab-group>
+    <!-- LOGIN TAB -->
+    <mat-tab label="Log ind">
+      <div class="login-buttons">
+        <button mat-raised-button class="google-btn" (click)="loginWithGoogle()">
+          <img src="assets/icons/google-icon.svg" class="icon" /> Log ind med Google
+        </button>
+
+        <form #loginForm="ngForm" *ngIf="enableEmailLogin" (ngSubmit)="loginWithEmail(loginForm)">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>E-mail</mat-label>
+            <input matInput type="email" [(ngModel)]="loginEmail" name="loginEmail" required email
+              #loginEmailField="ngModel" />
+            <mat-error *ngIf="loginEmailField.invalid && loginEmailField.touched">
+              Ugyldig e-mailadresse.
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Adgangskode</mat-label>
+            <input matInput [type]="hideLoginPassword ? 'password' : 'text'" [(ngModel)]="loginPassword"
+              name="loginPassword" required minlength="6" #loginPasswordField="ngModel" />
+            <button mat-icon-button matSuffix (click)="hideLoginPassword = !hideLoginPassword" type="button">
+              <mat-icon>{{ hideLoginPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error *ngIf="loginPasswordField.errors?.['required'] && loginPasswordField.touched">
+              Adgangskode er påkrævet.
+            </mat-error>
+            <mat-error *ngIf="loginPasswordField.errors?.['minlength'] && loginPasswordField.touched">
+              Adgangskoden skal være mindst 6 tegn.
+            </mat-error>
+          </mat-form-field>
+
+          <button mat-raised-button color="primary" type="submit" [disabled]="loginForm.invalid">Login</button>
+        </form>
+
+        <mat-error *ngIf="loginError" class="error-msg">{{ loginError }}</mat-error>
+      </div>
+    </mat-tab>
+
+    <!-- REGISTER TAB -->
+    <mat-tab label="Opret konto">
+      <div class="login-buttons">
+        <form #registerForm="ngForm" *ngIf="enableEmailLogin" (ngSubmit)="registerWithEmail(registerForm)">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>E-mail</mat-label>
+            <input matInput type="email" [(ngModel)]="registerEmail" name="registerEmail" required email
+              #registerEmailField="ngModel" />
+            <mat-error *ngIf="registerEmailField.invalid && registerEmailField.touched">
+              Ugyldig e-mailadresse.
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Adgangskode</mat-label>
+            <input matInput [type]="hideRegisterPassword ? 'password' : 'text'" [(ngModel)]="registerPassword"
+              name="registerPassword" required minlength="6" #registerPasswordField="ngModel" />
+            <button mat-icon-button matSuffix (click)="hideRegisterPassword = !hideRegisterPassword" type="button">
+              <mat-icon>{{ hideRegisterPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error *ngIf="registerPasswordField.errors?.['required'] && registerPasswordField.touched">
+              Adgangskode er påkrævet.
+            </mat-error>
+            <mat-error *ngIf="registerPasswordField.errors?.['minlength'] && registerPasswordField.touched">
+              Adgangskoden skal være mindst 6 tegn.
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Bekræft adgangskode</mat-label>
+            <input matInput [type]="hideConfirmPassword ? 'password' : 'text'" [(ngModel)]="confirmPassword"
+              name="confirmPassword" required #confirmPasswordField="ngModel" />
+            <button mat-icon-button matSuffix (click)="hideConfirmPassword = !hideConfirmPassword" type="button">
+              <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error *ngIf="!passwordsMatch(registerForm)">
+              Adgangskoderne matcher ikke.
+            </mat-error>
+          </mat-form-field>
+
+          <button mat-raised-button color="accent" type="submit"
+            [disabled]="registerForm.invalid || !passwordsMatch(registerForm)">
+            Opret konto
+          </button>
+        </form>
+
+        <mat-error *ngIf="registerError" class="error-msg">{{ registerError }}</mat-error>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+</mat-card>
