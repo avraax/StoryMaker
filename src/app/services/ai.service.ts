@@ -40,7 +40,7 @@ export class AIService {
               content: `
                 Du skriver letlæselige 100% faktuelle historier på dansk med en LIX-score på ${lix}.
                 ${lixDescription}
-                Historien skal være sammenhængende og bygge videre fra kapitel til kapitel og være letlæselig i forhold til klassetrinet.
+                Historien skal være sammenhængende og bygge videre fra kapitel til kapitel og være letlæselig i forhold til lix-scoren.
                 
                 🔹 **Output-krav**:
                 1. Returnér en gyldig JSON-struktur:
