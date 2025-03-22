@@ -1,4 +1,10 @@
-import { Component, Input, OnDestroy, OnInit, Renderer2 } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnDestroy,
+  OnInit,
+  Renderer2
+} from '@angular/core';
 import { FirestoreService } from '../../services/firestore.service';
 import { FireStoreStory } from '../../models/firestore-story';
 import { MatCardModule } from '@angular/material/card';
@@ -15,6 +21,7 @@ import { DeleteConfirmationDialogComponent } from '../delete-confirmation-dialog
 import { ShareStoryDialogComponent } from '../share-story-dialog/share-story-dialog.component';
 import { UserModel } from '../../models/user.model';
 import { UserShareModel } from '../../models/user-share.model';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 @Component({
   selector: 'app-generated-stories',
@@ -27,6 +34,7 @@ import { UserShareModel } from '../../models/user-share.model';
     MatIconModule,
     MatTableModule,
     MatDialogModule,
+    MatProgressBarModule,
     StoryViewerComponent
   ],
   templateUrl: "generated-stories.component.html",
@@ -38,11 +46,19 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
   public selectedStory = new BehaviorSubject<FireStoreStory | null>(null);
   private orientationChangeListener: (() => void) | null = null;
 
-  constructor(private firestoreService: FirestoreService, private dialog: MatDialog,
-    private renderer: Renderer2) { }
+  constructor(
+    private firestoreService: FirestoreService,
+    private dialog: MatDialog,
+    private renderer: Renderer2
+  ) { }
 
   ngOnInit() {
     this.loadStories();
+  }
+
+  ngOnDestroy(): void {
+    this.selectedStory.unsubscribe();
+    this.removeOrientationListener();
   }
 
   loadStories() {
@@ -63,12 +79,6 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
     this.loadStories();
   }
 
-
-  ngOnDestroy(): void {
-    this.selectedStory.unsubscribe();
-    this.removeOrientationListener();
-  }
-
   confirmDelete(storyId: string, storyTitle: string): void {
     const dialogRef = this.dialog.open(DeleteConfirmationDialogComponent, {
       width: '350px',
@@ -86,68 +96,49 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
     if (this.user && storyId) {
       this.firestoreService.deleteStory(storyId).then(() => {
         this.stories = this.stories.filter(story => story.id !== storyId);
-      })
+      });
     }
   }
 
   public openStoryViewer(story: FireStoreStory) {
     this.selectedStory.next(story);
     this.enterFullscreen();
-    this.addOrientationListener(); // ✅ Start monitoring screen rotation
+    this.addOrientationListener();
   }
 
   public closeStoryViewer() {
     this.selectedStory.next(null);
     this.exitFullscreen();
-    this.removeOrientationListener(); // ✅ Stop monitoring screen rotation
+    this.removeOrientationListener();
   }
 
-  private async enterFullscreen() {
-    const elem = document.documentElement;
+  handleReadingPageNumber(pageNumber: number) {
+    const story = this.selectedStory.value;
+    const email = this.user?.email;
+    const safeEmail = email?.replace(/\./g, '_');
 
-    if (elem.requestFullscreen) {
-      await elem.requestFullscreen();
-    } else if ((elem as any).webkitRequestFullscreen) { /* Safari */
-      await (elem as any).webkitRequestFullscreen();
-    } else if ((elem as any).msRequestFullscreen) { /* IE11 */
-      await (elem as any).msRequestFullscreen();
-    }
+    if (story && email && safeEmail) {
+      this.firestoreService.updateStoryPageNumber(story.id!, email, pageNumber);
 
-    try {
-      if ('orientation' in screen && (screen.orientation as any).lock) {
-        await (screen.orientation as any).lock('landscape');
-        console.log("Orientation locked to landscape");
-      } else {
-        throw new Error("Orientation lock not supported");
+      const storyIndex = this.stories.findIndex(s => s.id === story.id);
+      if (storyIndex !== -1) {
+        if (!this.stories[storyIndex].pageNumber) {
+          this.stories[storyIndex].pageNumber = {};
+        }
+
+        this.stories[storyIndex].pageNumber[safeEmail] = pageNumber;
+        this.stories = [...this.stories];
       }
-    } catch (error) {
-      console.warn("Could not lock orientation, checking if CSS fallback is needed:", error);
-      this.applyCssFallback();
     }
   }
 
-  private async exitFullscreen() {
-    if (document.exitFullscreen) {
-      await document.exitFullscreen();
-    } else if ((document as any).webkitExitFullscreen) { /* Safari */
-      await (document as any).webkitExitFullscreen();
-    } else if ((document as any).msExitFullscreen) { /* IE11 */
-      await (document as any).msExitFullscreen();
-    }
-
-    try {
-      if ('orientation' in screen && (screen.orientation as any).unlock) {
-        (screen.orientation as any).unlock();
-      }
-    } catch (error) {
-      console.warn("Could not unlock orientation:", error);
-    }
-
-    this.removeCssFallback();
+  getResumePageNumber(story: FireStoreStory | null): number {
+    const email = this.user?.email as string;
+    const safeEmail = email.replace(/\./g, '_');
+    return (story?.pageNumber?.[safeEmail]) ?? 1;
   }
 
-
-  openShareDialog(story: FireStoreStory) {
+  public openShareDialog(story: FireStoreStory) {
     const dialogRef = this.dialog.open(ShareStoryDialogComponent, {
       width: '400px',
       data: { story }
@@ -160,7 +151,57 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** ✅ Detect screen orientation & apply/remove CSS */
+  getStoryProgressFromPageNumber(story: FireStoreStory): number {
+    const email = this.user?.email as string;
+    const safeEmail = email.replace(/\./g, '_');
+    const pageNumber = story.pageNumber?.[safeEmail] || 0;
+
+    const totalSlides = (story.chapters?.reduce((acc, c) => acc + Math.ceil(c.texts.length / 2), 0) || 0) + 2;
+
+    return pageNumber / totalSlides;
+  }
+
+  /** ✅ Fullscreen & Orientation Handling */
+  private async enterFullscreen() {
+    const elem = document.documentElement;
+
+    if (elem.requestFullscreen) {
+      await elem.requestFullscreen();
+    } else if ((elem as any).webkitRequestFullscreen) {
+      await (elem as any).webkitRequestFullscreen();
+    } else if ((elem as any).msRequestFullscreen) {
+      await (elem as any).msRequestFullscreen();
+    }
+
+    try {
+      if ('orientation' in screen && (screen.orientation as any).lock) {
+        await (screen.orientation as any).lock('landscape');
+      }
+    } catch (error) {
+      this.applyCssFallback();
+    }
+  }
+
+  private async exitFullscreen() {
+    if (document.exitFullscreen) {
+      await document.exitFullscreen();
+    } else if ((document as any).webkitExitFullscreen) {
+      await (document as any).webkitExitFullscreen();
+    } else if ((document as any).msExitFullscreen) {
+      await (document as any).msExitFullscreen();
+    }
+
+    try {
+      if ('orientation' in screen && (screen.orientation as any).unlock) {
+        (screen.orientation as any).unlock();
+      }
+    } catch (error) {
+      // Fail silently
+    }
+
+    this.removeCssFallback();
+  }
+
   private applyCssFallback() {
     const isLandscape = window.matchMedia("(orientation: landscape)").matches;
     const fullscreenContainer = document.querySelector('.fullscreen-view-container');
@@ -179,13 +220,11 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** ✅ Add listener for screen rotation */
   private addOrientationListener() {
     this.orientationChangeListener = () => this.applyCssFallback();
     window.matchMedia("(orientation: landscape)").addEventListener("change", this.orientationChangeListener);
   }
 
-  /** ✅ Remove listener when fullscreen is closed */
   private removeOrientationListener() {
     if (this.orientationChangeListener) {
       window.matchMedia("(orientation: landscape)").removeEventListener("change", this.orientationChangeListener);

@@ -1,11 +1,18 @@
 <mat-card class="container">
   <h2>Oversigt over Mine Historier</h2>
+
   <table mat-table [dataSource]="stories" class="mat-elevation-z2">
 
     <!-- Title Column -->
     <ng-container matColumnDef="title">
       <th mat-header-cell *matHeaderCellDef> Titel </th>
-      <td mat-cell *matCellDef="let story"> {{ story.title }} </td>
+      <td mat-cell *matCellDef="let story">
+        {{ story.title }}
+
+        <!-- ✅ Progress Bar Below Title -->
+        <mat-progress-bar class="story-progress" mode="determinate" [value]="getStoryProgressFromPageNumber(story) * 100">
+        </mat-progress-bar>
+      </td>
     </ng-container>
 
     <!-- UpdatedAt Column -->
@@ -45,6 +52,9 @@
   </p>
 </mat-card>
 
+<!-- ✅ Fullscreen Viewer -->
 @if(selectedStory | async) {
-<app-story-viewer [story]="selectedStory" (close)="closeStoryViewer()"></app-story-viewer>
+<app-story-viewer [story]="selectedStory" [user]="user" (close)="closeStoryViewer()"
+  [startAtPage]="getResumePageNumber(selectedStory | async)" (readingPageNumber)="handleReadingPageNumber($event)">
+</app-story-viewer>
 }

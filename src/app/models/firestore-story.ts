@@ -12,4 +12,7 @@ export interface FireStoreStory {
     updatedAt: Date;   // Timestamp for updates
     lix: number;       // 🔹 Nyt felt til LIX-niveau
     sharedWith: string[];
+    pageNumber?: {
+        [email: string]: number;
+    };
 }

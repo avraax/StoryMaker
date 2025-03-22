@@ -27,7 +27,6 @@ export class LoginComponent {
   hideLoginPassword = true;
   hideRegisterPassword = true;
   hideConfirmPassword = true;
-  enableEmailLogin = environment.enableEmailLogin;
 
   loginError: string | null = null;
   registerError: string | null = null;

@@ -26,9 +26,11 @@ export class StoryViewerComponent implements OnInit {
   @Input() user: UserModel | undefined | null;
   storyObj: FireStoreStory | null | undefined;
   @Output() close = new EventEmitter<void>();
+  @Output() readingPageNumber = new EventEmitter<number>();
+  @Input() startAtPage: number = 1;
   @ViewChild('storyContent', { static: false }) storyContentRef!: ElementRef;
 
-  currentPageIndex = 0;
+  currentPageIndex = 1;
   touchStartX = 0;
   touchEndX = 0;
   totalPages = 0; // Total number of pages including cover and last page
@@ -39,13 +41,17 @@ export class StoryViewerComponent implements OnInit {
   ngOnInit() {
     this.story.subscribe((story) => {
       this.storyObj = story;
-      this.currentPageIndex = 0;
       this.chapterSlides = this.generateSlides();
-      this.totalPages = this.chapterSlides.length + 2; // Cover + Slides + End Page
+      this.totalPages = this.chapterSlides.length + 2; // Cover + Chapters + End page
+
+      // ✅ Start at stored progress (or 0)
+      this.currentPageIndex = this.startAtPage - 1;
     });
   }
 
+
   closeStoryViewer() {
+    this.readingPageNumber.emit(this.currentPageIndex + 1);
     this.close.emit();
   }
 

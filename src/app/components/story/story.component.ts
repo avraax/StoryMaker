@@ -15,7 +15,6 @@ import { StoryChapter } from '../../models/story-chapter';
 import { FireStoreStory } from '../../models/firestore-story';
 import { ProgressTrackerComponent } from '../progress-tracker/progress-tracker.component';
 import { StoryUtilsService } from '../../utils/story-utils.service';
-import { StoryViewerComponent } from '../story-viewer/story-viewer.component';
 import { BehaviorSubject } from 'rxjs';
 import { UserModel } from '../../models/user.model';
 
@@ -33,28 +32,27 @@ import { UserModel } from '../../models/user.model';
     MatProgressBarModule,
     MatIconModule,
     ProgressTrackerComponent,
-    FormsModule,
-    StoryViewerComponent
+    FormsModule
   ],
   templateUrl: "story.component.html",
   styleUrls: ["story.component.scss"],
 })
 
 export class StoryComponent implements OnInit, OnDestroy {
-  @Output() navigateToGenerated = new EventEmitter<void>(); // Opret event
+  @Output() navigateToGenerated = new EventEmitter<void>();
   @Input() user: UserModel | undefined | null;
   story = new BehaviorSubject<FireStoreStory | null>(null);
   mainCategory: string = 'sport';
   subCategory: string = 'Spillere';
   inputTopic: string = '';
-  selectedGrade: number = 4;
   chapters: StoryChapter[] = [];
   loading: boolean = false;
-  showStoryViewer: boolean = false;
   totalChapters: number = 0;
   totalTasks: number = 0;
   progressDescription: string | null = null;
   progressCompletedTasks: number = 0;
+  canceled: boolean = false;
+  cancelComplete: boolean = false;
 
   subcategories: string[] = [];
   sportSubcategories = ['Spillere', 'Trænere', 'Klubber', 'Historiske Øjeblikke'];
@@ -65,7 +63,7 @@ export class StoryComponent implements OnInit, OnDestroy {
   natureSubcategories = ['Klimaændringer', 'Dyr', 'Planter', 'Økosystemer'];
   spaceSubcategories = ['Planeter', 'Stjernebilleder', 'Astronauter', 'Rumrejser'];
 
-  selectedLix: number = 20;
+  selectedLix: number = 15;
   lixLevels = [
     { value: 3, label: "LIX 3-5 (0. kl.)" },
     { value: 5, label: "LIX 4-6 (0.-1. kl.)" },
@@ -119,40 +117,49 @@ export class StoryComponent implements OnInit, OnDestroy {
     if (!this.inputTopic || !this.selectedLix || !this.user) {
       return;
     }
-
+  
+    this.cancelComplete = false;
+    this.canceled = false;
+  
     this.story.next(null);
     this.reset();
+  
     this.totalChapters = this.aiService.totalChapters;
     this.totalTasks = this.totalChapters + 1;
-    this.progressDescription = `Genererer kapitel ${(this.chapters.length + 1)} af ${this.totalChapters}`;
-
+    this.progressDescription = `Genererer kapitel 1 af ${this.totalChapters}`;
+    this.loading = true;
+  
     try {
       let coverMetadata: { description: string; image: string } | null = null;
-
+  
       for await (let data of this.aiService.generateStoryStream(this.mainCategory, this.subCategory, this.inputTopic, this.selectedLix)) {
+        if (this.canceled) {
+          this.cancelComplete = true;
+          this.reset();
+          return;
+        }
+  
         if ('title' in data) {
           this.chapters.push(data);
-
-          if (this.chapters.length < this.totalChapters) {
-            this.progressDescription = `Genererer kapitel ${(this.chapters.length + 1)} af ${this.totalChapters}`;
-          }
-
+          this.progressDescription = `Genererer kapitel ${this.chapters.length + 1} af ${this.totalChapters}`;
           this.progressCompletedTasks++;
         } else {
           coverMetadata = data;
         }
-
+  
         if (this.progressCompletedTasks >= this.totalChapters) {
           this.progressDescription = `Gemmer historie`;
         }
       }
-
+  
+      if (this.canceled) return;
+  
       if (!coverMetadata) {
         throw new Error("Metadata mangler. Kunne ikke generere beskrivelse og forsidebillede.");
       }
-
+  
       const date = new Date();
-
+  
       this.story.next({
         title: this.inputTopic,
         chapters: this.chapters,
@@ -165,31 +172,31 @@ export class StoryComponent implements OnInit, OnDestroy {
         createdBy: this.user.uid,
         sharedWith: []
       });
-
+  
     } catch (error) {
+      this.cancelComplete = true;
       this.reset();
-      throw error;
+      console.error(error);
     }
-
+  
     this.progressCompletedTasks++;
-    this.loading = false;
+    this.loading = false; // ✅ End of progress
   }
-
+  
+  cancelGeneration() {
+    this.canceled = true;
+    this.progressDescription = 'Afbryder generering...';
+  }
 
   private reset(): void {
     this.story.next(null);
+    this.chapters = [];
     this.progressCompletedTasks = 0;
     this.progressDescription = '';
-    this.chapters = [];
-    this.loading = true;
-  }
-
-  public openStoryViewer() {
-    this.showStoryViewer = true;
-  }
-
-  closeStoryViewer() {
-    this.showStoryViewer = false;
+    this.totalChapters = 0;
+    this.totalTasks = 0;
+    this.loading = false;
+    this.canceled = false;
   }
 
   async saveStory(story: FireStoreStory | undefined | null) {

@@ -19,7 +19,7 @@ export class FirestoreService {
     const storage = getStorage();
     const storiesCollection = collection(this.firestore, 'stories');
 
-    // Save story first (without images)
+    // Save story skeleton (without images)
     const storyToSave: FireStoreStory = {
       title: story.title,
       author: story.author,
@@ -36,9 +36,9 @@ export class FirestoreService {
     const storyDocRef = await addDoc(storiesCollection, storyToSave);
     const storyId = storyDocRef.id;
 
-    // Upload Cover Image (if exists)
+    // Upload Cover Image
     if (story.image?.startsWith('data:image')) {
-      const coverImagePath = `stories/${userId}/${storyId}/cover.jpg`; // ✅ Includes userId
+      const coverImagePath = this.getCoverImagePath(userId, storyId);
       const coverImageRef = ref(storage, coverImagePath);
       const metadata = { customMetadata: { creator: userId } };
 
@@ -46,35 +46,40 @@ export class FirestoreService {
       storyToSave.image = await getDownloadURL(coverImageRef);
     }
 
-    // Upload Chapter Images (if exists)
+    // Upload Chapter Images
     const updatedChapters = await Promise.all(
       story.chapters.map(async (chapter, chapterIndex) => {
         const updatedChapter = { ...chapter, images: [] as string[] };
 
         if (chapter.images?.length) {
           for (let imageIndex = 0; imageIndex < chapter.images.length; imageIndex++) {
-            if (!chapter.images[imageIndex].startsWith('data:image')) continue;
+            const imgData = chapter.images[imageIndex];
+            if (!imgData.startsWith('data:image')) continue;
 
-            const imagePath = `stories/${userId}/${storyId}/chapter_${chapterIndex}_${imageIndex}.jpg`; // ✅ Includes userId
+            const imagePath = this.getChapterImagePath(userId, storyId, chapterIndex, imageIndex);
             const imageRef = ref(storage, imagePath);
 
-            await uploadString(imageRef, chapter.images[imageIndex], 'data_url');
+            await uploadString(imageRef, imgData, 'data_url');
             updatedChapter.images.push(await getDownloadURL(imageRef));
           }
         }
+
         return updatedChapter;
       })
     );
 
-    // Update Firestore with uploaded images
-    await updateDoc(storyDocRef, { image: storyToSave.image, chapters: updatedChapters });
+    // Final update with images added
+    await updateDoc(storyDocRef, {
+      image: storyToSave.image,
+      chapters: updatedChapters
+    });
   }
-
 
   async deleteStory(storyId: string) {
     const auth = getAuth();
     if (!auth.currentUser) throw new Error('Unauthorized');
 
+    const userId = auth.currentUser.uid;
     const storage = getStorage();
     const storyDocRef = doc(this.firestore, `stories/${storyId}`);
     const storySnap = await getDoc(storyDocRef);
@@ -82,21 +87,40 @@ export class FirestoreService {
     if (!storySnap.exists()) return;
 
     const story = storySnap.data() as FireStoreStory;
-    if (story.createdBy !== auth.currentUser.uid) throw new Error('Unauthorized');
+    if (story.createdBy !== userId) throw new Error('Unauthorized');
 
-    if (story.image) await deleteObject(ref(storage, story.image));
+    // Delete cover image
+    try {
+      const coverPath = this.getCoverImagePath(userId, storyId);
+      await deleteObject(ref(storage, coverPath));
+    } catch (err) {
+      console.warn('Cover image deletion issue:', err);
+    }
 
-    if (story.chapters?.length) {
-      for (const chapter of story.chapters) {
-        if (chapter.images?.length) {
-          for (const img of chapter.images) {
-            await deleteObject(ref(storage, img));
+    // Delete chapter images
+    for (let chapterIndex = 0; chapterIndex < story.chapters.length; chapterIndex++) {
+      const chapter = story.chapters[chapterIndex];
+      if (chapter.images?.length) {
+        for (let imageIndex = 0; imageIndex < chapter.images.length; imageIndex++) {
+          const imagePath = this.getChapterImagePath(userId, storyId, chapterIndex, imageIndex);
+          try {
+            await deleteObject(ref(storage, imagePath));
+          } catch (err) {
+            console.warn(`Failed to delete ${imagePath}:`, err);
           }
         }
       }
     }
 
     await deleteDoc(storyDocRef);
+  }
+
+  private getCoverImagePath(userId: string, storyId: string): string {
+    return `stories/${userId}/${storyId}/cover.jpg`;
+  }
+
+  private getChapterImagePath(userId: string, storyId: string, chapterIndex: number, imageIndex: number): string {
+    return `stories/${userId}/${storyId}/chapter_${chapterIndex}_${imageIndex}.jpg`;
   }
 
   async getStoryById(storyId: string): Promise<FireStoreStory | null> {
@@ -114,6 +138,19 @@ export class FirestoreService {
     }
 
     return story;
+  }
+
+  async updateStoryPageNumber(storyId: string, userEmail: string, pageNumber: number) {
+    const storyRef = doc(this.firestore, `stories/${storyId}`);
+    const safeEmail = userEmail.replace(/\./g, '_');
+  
+    try {
+      await updateDoc(storyRef, {
+        [`pageNumber.${safeEmail}`]: pageNumber
+      });
+    } catch (error) {
+      console.error('Error saving page index:', error);
+    }
   }
 
   async getUserFromFirestore(userId: string): Promise<UserModel | null> {
@@ -230,14 +267,14 @@ export class FirestoreService {
   async getUserByEmail(email: string): Promise<UserModel | null> {
     const usersRef = collection(this.firestore, 'users') as CollectionReference<UserModel>;
     const snapshot = await getDocs(usersRef);
-  
+
     for (const docSnap of snapshot.docs) {
       const userData = docSnap.data();
       if (userData.email === email) {
         return { ...userData, uid: docSnap.id };
       }
     }
-  
+
     return null;
   }
 

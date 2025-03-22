@@ -51,17 +51,6 @@
         text-decoration: underline;
     }
 
-    .fullscreen-icon {
-        font-size: 34px;
-        cursor: pointer;
-        color: #333;
-        transition: color 0.3s;
-
-        &:hover {
-            color: #007bff;
-        }
-    }
-
     mat-progress-bar {
         width: 100%;
         margin-bottom: 5px;

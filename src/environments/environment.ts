@@ -1,6 +1,5 @@
 export const environment = {
   production: false,
-  enableEmailLogin: true,
   firebaseConfig: {
     apiKey: "",
     authDomain: "",

@@ -64,6 +64,17 @@
     color: #666;
     margin-top: 15px;
   }
+
+  .story-progress {
+    margin-top: 4px;
+    height: 6px;
+    border-radius: 8px;
+    background-color: #f1f1f1;
+
+    ::ng-deep .mat-progress-bar-fill::after {
+      border-radius: 8px;
+    }
+  }
 }
 
 /* ✅ Hide "updatedAt" column on screens smaller than 768px */

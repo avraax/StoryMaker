@@ -1,10 +1,62 @@
-.progress-container {
-    margin: 10px 0;
-    padding: 15px;
-    text-align: center;
-}
+:host {
+    .progress-container {
+        margin: 10px 0;
+        padding: 15px;
+        text-align: center;
+    }
 
-mat-progress-bar {
-    width: 100%;
-    margin-bottom: 10px;
+    mat-progress-bar {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .button-container {
+        margin-top: 12px;
+        text-align: right;
+    }
+
+    .progress-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .progress-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 4px 0;
+    }
+
+    .progress-text {
+        margin: 0;
+        flex: 1;
+        text-align: center; // ✅ always centered
+        font-size: 14px;
+        color: #444;
+    }
+
+    .cancel-btn {
+        color: white;
+        background-color: #e53935; // 🔥 Angular Material red[600]
+        border: none;
+        padding: 6px 16px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 4px;
+        transition: background-color 0.2s ease-in-out;
+
+        &:hover {
+            background-color: #d32f2f; // 🔥 red[700]
+        }
+
+        mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+        }
+    }
 }

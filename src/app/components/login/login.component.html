@@ -9,7 +9,7 @@
           <img src="assets/icons/google-icon.svg" class="icon" /> Log ind med Google
         </button>
 
-        <form #loginForm="ngForm" *ngIf="enableEmailLogin" (ngSubmit)="loginWithEmail(loginForm)">
+        <form #loginForm="ngForm" (ngSubmit)="loginWithEmail(loginForm)">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>E-mail</mat-label>
             <input matInput type="email" [(ngModel)]="loginEmail" name="loginEmail" required email
@@ -44,7 +44,7 @@
     <!-- REGISTER TAB -->
     <mat-tab label="Opret konto">
       <div class="login-buttons">
-        <form #registerForm="ngForm" *ngIf="enableEmailLogin" (ngSubmit)="registerWithEmail(registerForm)">
+        <form #registerForm="ngForm" (ngSubmit)="registerWithEmail(registerForm)">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>E-mail</mat-label>
             <input matInput type="email" [(ngModel)]="registerEmail" name="registerEmail" required email

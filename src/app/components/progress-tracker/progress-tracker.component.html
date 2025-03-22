@@ -1,2 +1,15 @@
-<mat-progress-bar mode="determinate" [value]="progressPercentage"></mat-progress-bar>
-<p>{{ description }}</p>
+<div class="progress-wrapper">
+    <mat-progress-bar mode="determinate" [value]="progressPercentage"></mat-progress-bar>
+
+    <div class="progress-footer">
+        <p class="progress-text">
+            {{ isCanceled ? 'Generering afbrudt' : isCanceling ? 'Afbryder generering...' : description }}
+        </p>
+
+        <button *ngIf="!isCanceling && !isCanceled" mat-stroked-button color="warn" class="cancel-btn"
+            (click)="onCancelClick()">
+            <mat-icon>cancel</mat-icon>
+            Afbryd
+        </button>
+    </div>
+</div>
