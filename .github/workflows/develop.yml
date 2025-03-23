@@ -40,11 +40,21 @@ jobs:
             },
             openAIConfig: {
               apiKey: "${{ secrets.OPENAI_API_KEY }}",
-              apiUrl: "${{ secrets.OPENAI_API_URL }}"
+              apiUrl: "${{ secrets.OPENAI_API_URL }}",
+              aiImageApiUrl: "${{ secrets.OPENAI_API_IMAGE_URL }}"
             },
             googleConfig: {
               apiKey: "${{ secrets.GOOGLE_API_KEY }}",
               cseId: "${{ secrets.GOOGLE_CSE_ID }}"
+            },
+            stabilityConfig: {
+              apiKey: "${{ secrets.STABILITY_API_KEY }}",
+              apiUrl: "${{ secrets.STABILITY_API_URL }}"
+            },
+            fluxConfig: {
+              apiKey: "${{ secrets.FLUX_API_KEY }}",
+              apiUrl: "${{ secrets.FLUX_API_URL }}",
+              model: '${{ secrets.FLUX_MODEL'
             }
           };
           EOF

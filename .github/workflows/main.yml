@@ -2,9 +2,6 @@ name: Deploy to Firebase (Production)
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
   build:
@@ -45,6 +42,15 @@ jobs:
             googleConfig: {
               apiKey: "${{ secrets.GOOGLE_API_KEY }}",
               cseId: "${{ secrets.GOOGLE_CSE_ID }}"
+            },
+            stabilityConfig: {
+              apiKey: "${{ secrets.STABILITY_API_KEY }}",
+              apiUrl: "${{ secrets.STABILITY_CSE_ID }}"
+            },
+            fluxConfig: {
+              apiKey: "${{ secrets.FLUX_API_KEY }}",
+              apiUrl: "${{ secrets.FLUX_CSE_ID }}",
+              model: '${{ secrets.FLUX_MODEL'
             }
           };
           EOF
