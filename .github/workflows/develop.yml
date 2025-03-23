@@ -1,4 +1,4 @@
-name: Deploy to Firebase (Test Only)
+name: Deploy to Firebase (Test)
 
 on:
   workflow_dispatch:
@@ -15,13 +15,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Create environment.test.ts
         run: |
@@ -50,11 +50,12 @@ jobs:
           EOF
 
       - name: Build Angular app
-        run: npm run test
+        run: npm run build -- --configuration=test
 
       - name: Deploy to Firebase (Test)
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          channelId: test
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TEST }}
+          projectId: story-maker-test
+          channelId: live

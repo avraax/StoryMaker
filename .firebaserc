@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "story-maker-373a2"
+    "default": "story-maker-373a2",
+    "test": "story-maker-test"
   }
 }
