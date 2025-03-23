@@ -54,7 +54,7 @@ jobs:
             fluxConfig: {
               apiKey: "${{ secrets.FLUX_API_KEY }}",
               apiUrl: "${{ secrets.FLUX_API_URL }}",
-              model: '${{ secrets.FLUX_MODEL' }}"
+              model: "${{ secrets.FLUX_MODEL }}"
             }
           };
           EOF
