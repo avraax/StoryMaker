@@ -37,7 +37,8 @@ jobs:
             },
             openAIConfig: {
               apiKey: "${{ secrets.OPENAI_API_KEY }}",
-              apiUrl: "${{ secrets.OPENAI_API_URL }}"
+              apiUrl: "${{ secrets.OPENAI_API_URL }}",
+              aiImageApiUrl: "${{ secrets.OPENAI_API_IMAGE_URL }}"
             },
             googleConfig: {
               apiKey: "${{ secrets.GOOGLE_API_KEY }}",
