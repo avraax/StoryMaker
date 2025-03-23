@@ -3,7 +3,7 @@
 
     <div class="progress-footer">
         <p class="progress-text">
-            {{ isCanceled ? 'Generering afbrudt' : isCanceling ? 'Afbryder generering...' : description }}
+            {{ isCanceled ? 'Generering afbrudt' : isCanceling ? 'Afbryder...' : description }}
         </p>
 
         <button *ngIf="!isCanceling && !isCanceled" mat-stroked-button color="warn" class="cancel-btn"

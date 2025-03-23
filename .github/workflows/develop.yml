@@ -28,6 +28,7 @@ jobs:
           cat <<EOF > src/environments/environment.test.ts
           export const environment = {
             production: false,
+            useAIImageGeneration: true,
             firebaseConfig: {
               apiKey: "${{ secrets.FIREBASE_API_KEY }}",
               authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",

@@ -8,9 +8,9 @@ import { ImageService } from './image.service';
   providedIn: 'root',
 })
 export class AIService {
-  totalChapters: number = 1;
+  totalChapters: number = 3;
   maxTokensPerRequest: number = 1096; // Maksimale tokens pr. kald = 4096
-  imagesPerChapter: number = 2;
+  imagesPerChapter: number = 4;
 
   constructor(private imageService: ImageService) {}
 
@@ -103,7 +103,7 @@ export class AIService {
         throw new Error("AI-returneret JSON mangler nødvendige felter.");
       }
 
-      let images = await this.imageService.fetchImages(`${topic} ${newChapter.imageQuery}`, this.imagesPerChapter);
+      let images = await this.imageService.fetchImages(`${newChapter.imageQuery}`, this.imagesPerChapter);
       newChapter.images = images;
 
       storySoFar += `\nKapitel ${i}: ${newChapter.title}\n${newChapter.texts.join(" ")}\n`;

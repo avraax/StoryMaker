@@ -185,7 +185,7 @@ export class StoryComponent implements OnInit, OnDestroy {
   
   cancelGeneration() {
     this.canceled = true;
-    this.progressDescription = 'Afbryder generering...';
+    this.progressDescription = 'Afbryder...';
   }
 
   private reset(): void {
