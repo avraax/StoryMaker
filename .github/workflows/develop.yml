@@ -28,7 +28,7 @@ jobs:
           cat <<EOF > src/environments/environment.test.ts
           export const environment = {
             production: false,
-            imageProvider: '',
+            imageProvider: 'google',
             firebaseConfig: {
               apiKey: "${{ secrets.FIREBASE_API_KEY }}",
               authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",

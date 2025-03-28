@@ -45,26 +45,14 @@ export class AuthService {
   }
 
   async loginWithGoogle() {
-    try {
       const credential = await signInWithPopup(this.auth, new GoogleAuthProvider());
       const firebaseUser = credential.user;
-
-      const existingUser = await this.firestoreService.getUserByEmail(firebaseUser.email!);
-      if (existingUser && existingUser.uid !== firebaseUser.uid) {
-        await signOut(this.auth);
-        throw new Error('Denne e-mail er allerede registreret med en anden konto.');
-      }
 
       const userModel = await this.mapFirebaseUserToUserModel(firebaseUser);
       this.userSubject.next(userModel);
       await this.firestoreService.checkAndSetUserRole(userModel);
 
       this.router.navigate(['/dashboard']);
-
-    } catch (error) {
-      console.error('Google login failed:', error);
-      throw error;
-    }
   }
 
   async loginWithFacebook() {
@@ -109,7 +97,7 @@ export class AuthService {
 
       return Object.assign(firebaseUser, {
         role: role || 'reader',
-        assignedUsers: assignedUsers.map(user => user.uid)
+        assignedUsers: assignedUsers && assignedUsers.length ? assignedUsers.map(user => user.uid) : []
       }) as UserModel;
     } catch (error) {
       console.error('Error mapping Firebase user:', error);

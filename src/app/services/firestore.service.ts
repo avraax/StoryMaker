@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, addDoc, doc, deleteDoc, getDoc, getDocs, updateDoc, CollectionReference, setDoc } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, doc, deleteDoc, getDoc, getDocs, updateDoc, CollectionReference, setDoc, query, where } from '@angular/fire/firestore';
 import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from '@angular/fire/storage';
 import { FireStoreStory } from '../models/firestore-story';
 import { getAuth } from '@angular/fire/auth';
@@ -143,7 +143,7 @@ export class FirestoreService {
   async updateStoryPageNumber(storyId: string, userEmail: string, pageNumber: number) {
     const storyRef = doc(this.firestore, `stories/${storyId}`);
     const safeEmail = userEmail.replace(/\./g, '_');
-  
+
     try {
       await updateDoc(storyRef, {
         [`pageNumber.${safeEmail}`]: pageNumber
@@ -166,30 +166,41 @@ export class FirestoreService {
     const authInstance = getAuth();
     const loggedInUser = authInstance.currentUser;
 
-    if (!loggedInUser) {
-      return [];
-    }
+    if (!loggedInUser) return [];
 
     try {
       const userDocRef = doc(this.firestore, `users/${loggedInUser.uid}`);
       const userDoc = await getDoc(userDocRef);
 
-      if (!userDoc.exists()) {
-        return [];
-      }
+      if (!userDoc.exists()) return [];
 
-      const assignedUserIds: string[] = userDoc.data()?.['assignedUsers'] ?? [];
+      const assignedUsersEmails: string[] = userDoc.data()?.['assignedUsers'] ?? [];
 
-      if (!Array.isArray(assignedUserIds) || assignedUserIds.length === 0) {
-        return [];
-      }
+      if (!Array.isArray(assignedUsersEmails) || assignedUsersEmails.length === 0) return [];
 
-      const usersRef = collection(this.firestore, 'users') as CollectionReference<UserModel>;
-      const users = await getDocs(usersRef);
+      const userFetchPromises = assignedUsersEmails.map(async (email) => {
+        
 
-      return users.docs
-        .map(doc => ({ ...doc.data(), uid: doc.id }))
-        .filter(user => assignedUserIds.includes(user.uid));
+        const usersRef = collection(this.firestore, 'users') as CollectionReference<UserModel>;
+        const q = query(usersRef, where('email', '==', email));
+    
+        try {
+          const snapshot = await getDocs(q);
+    
+          if (!snapshot.empty) {
+            const docSnap = snapshot.docs[0];
+            return { ...docSnap.data(), uid: docSnap.id };
+          }
+        } catch (error) {
+          console.error("Error getting user by email", error);
+        }
+        return null;
+      });
+
+      const userResults = await Promise.all(userFetchPromises);
+
+      // Filter out null results (failed fetches)
+      return userResults.filter((user): user is UserModel => user !== null);
 
     } catch (error) {
       console.error("Error fetching assigned users:", error);
@@ -266,13 +277,17 @@ export class FirestoreService {
 
   async getUserByEmail(email: string): Promise<UserModel | null> {
     const usersRef = collection(this.firestore, 'users') as CollectionReference<UserModel>;
-    const snapshot = await getDocs(usersRef);
+    const q = query(usersRef, where('email', '==', email));
 
-    for (const docSnap of snapshot.docs) {
-      const userData = docSnap.data();
-      if (userData.email === email) {
-        return { ...userData, uid: docSnap.id };
+    try {
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        const docSnap = snapshot.docs[0];
+        return { ...docSnap.data(), uid: docSnap.id };
       }
+    } catch (error) {
+      console.error("Error getting user by email", error);
     }
 
     return null;
