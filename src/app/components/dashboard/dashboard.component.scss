@@ -7,16 +7,21 @@
 
   .container {
     height: 100%;
+    display: flex;
+    flex-direction: column;
+    max-width: 940px;
+    margin: 0 auto;
 
     .content {
       background: white;
       border-radius: 10px;
       padding: 15px 30px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
       display: flex;
       justify-content: center;
       margin: 20px auto;
-      max-width: 940px;
+      width: calc(100% - 60px);
+      flex: 1;
 
       mat-tab-group {
         width: 100%;
@@ -24,7 +29,7 @@
     }
 
     .header {
-      max-width: 940px;
+      width: calc(100% - 60px);
       margin: auto;
       background: #4285F4; // Softer blue
       display: flex;
@@ -33,7 +38,7 @@
       padding: 15px 30px;
       border-radius: 10px;
       color: white;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 
       .profile-info {
         display: flex;

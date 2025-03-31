@@ -47,7 +47,6 @@ export class StoryComponent implements OnInit, OnDestroy {
   inputTopic: string = '';
   chapters: StoryChapter[] = [];
   loading: boolean = false;
-  totalChapters: number = 0;
   totalTasks: number = 0;
   progressDescription: string | null = null;
   progressCompletedTasks: number = 0;
@@ -124,15 +123,16 @@ export class StoryComponent implements OnInit, OnDestroy {
     this.story.next(null);
     this.reset();
   
-    this.totalChapters = this.aiService.totalChapters;
-    this.totalTasks = this.totalChapters + 1;
-    this.progressDescription = `Genererer kapitel 1 af ${this.totalChapters}`;
+    const totalChapters = 10;
+    const imagesPerChapter = 12;
+    this.totalTasks = totalChapters + 1;
+    this.progressDescription = `Genererer kapitel 1 af ${totalChapters}`;
     this.loading = true;
   
     try {
       let coverMetadata: { description: string; image: string } | null = null;
   
-      for await (let data of this.aiService.generateStoryStream(this.mainCategory, this.subCategory, this.inputTopic, this.selectedLix)) {
+      for await (let data of this.aiService.generateStoryStream(this.mainCategory, this.subCategory, this.inputTopic, this.selectedLix, totalChapters, imagesPerChapter)) {
         if (this.canceled) {
           this.cancelComplete = true;
           this.reset();
@@ -141,13 +141,13 @@ export class StoryComponent implements OnInit, OnDestroy {
   
         if ('title' in data) {
           this.chapters.push(data);
-          this.progressDescription = `Genererer kapitel ${this.chapters.length + 1} af ${this.totalChapters}`;
+          this.progressDescription = `Genererer kapitel ${this.chapters.length + 1} af ${totalChapters}`;
           this.progressCompletedTasks++;
         } else {
           coverMetadata = data;
         }
   
-        if (this.progressCompletedTasks >= this.totalChapters) {
+        if (this.progressCompletedTasks >= totalChapters) {
           this.progressDescription = `Gemmer historie`;
         }
       }
@@ -193,7 +193,6 @@ export class StoryComponent implements OnInit, OnDestroy {
     this.chapters = [];
     this.progressCompletedTasks = 0;
     this.progressDescription = '';
-    this.totalChapters = 0;
     this.totalTasks = 0;
     this.loading = false;
     this.canceled = false;
