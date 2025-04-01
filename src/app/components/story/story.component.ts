@@ -97,7 +97,7 @@ export class StoryComponent implements OnInit, OnDestroy {
 
   constructor(private aiService: AIService, private firestoreService: FirestoreService, public storyUtils: StoryUtilsService) { }
 
-  ngOnInit() {
+  async ngOnInit() {
     this.updateSubcategories(); // Opdater underkategorier baseret på den valgte hovedkategori
 
     this.story.subscribe((story) => {
@@ -105,6 +105,8 @@ export class StoryComponent implements OnInit, OnDestroy {
         this.saveStory(story);
       }
     })
+
+    await this.aiService.testLixLevels();
   }
 
   ngOnDestroy(): void {

@@ -178,6 +178,7 @@ export class AIService {
     }
 
     async testLixLevels() {
+        console.log('starter test')
         const lixLevels = [5, 10, 20, 25, 35, 45, 55];
         const results: any[] = [];
     
@@ -191,7 +192,7 @@ export class AIService {
                 "Messi",
                 lix,
                 1,           // One chapter for testing
-                3,           // Three images per chapter
+                1,           // Three images per chapter
                 500          // 500 words per chapter
             );
     
