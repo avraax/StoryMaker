@@ -38,6 +38,46 @@
         </mat-select>
     </mat-form-field>
 
+    <!-- Avanceret Sektion -->
+    <div class="advanced-section">
+        <button mat-button [disabled]="loading" (click)="toggleAdvanced()" class="advanced-toggle">
+            Avanceret <mat-icon>{{ advancedOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </button>
+
+        <div *ngIf="advancedOpen" class="advanced-options">
+            <mat-form-field appearance="outline" class="advanced-field">
+                <mat-label>Total kapitler</mat-label>
+                <mat-select [disabled]="loading" [(ngModel)]="totalChapters">
+                    <mat-option *ngFor="let num of [].constructor(20); let i = index" [value]="i + 1">
+                        {{ i + 1 }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="advanced-field">
+                <mat-label>Billeder pr. Kapitel</mat-label>
+                <mat-select [disabled]="loading" [(ngModel)]="imagesPerChapter">
+                    <mat-option *ngFor="let num of [].constructor(12); let i = index" [value]="i + 1">
+                        {{ i + 1 }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="advanced-field">
+                <mat-label>Antal ord pr. kapitel</mat-label>
+                <mat-select [disabled]="loading" [(ngModel)]="wordsPerChapter">
+                    <mat-option value="auto">Auto (ud fra LIX-niveau)</mat-option>
+                    <mat-option value="500">500 ord</mat-option>
+                    <mat-option value="700">700 ord</mat-option>
+                    <mat-option value="900">900 ord</mat-option>
+                    <mat-option value="1200">1200 ord</mat-option>
+                    <mat-option value="1500">1500 ord</mat-option>
+                    <mat-option value="2000">2000 ord</mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+    </div>
+
     <div class="button-group">
         <button mat-raised-button color="primary" (click)="generateStory()"
             [disabled]="loading || !inputTopic || !selectedLix">

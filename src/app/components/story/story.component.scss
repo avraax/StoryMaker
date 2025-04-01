@@ -8,6 +8,25 @@
         background: white;
         border-radius: 10px;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
+        .advanced-section {
+
+            .advanced-toggle {
+                display: block;
+                padding-right: 0;
+                margin-left: auto;
+            }
+
+            .advanced-options {
+                display: flex;
+                gap: 20px;
+                margin-top: 10px;
+
+                mat-form-field {
+                    flex: 1
+                }
+            }
+        }
     }
 
     .loading-spinner {

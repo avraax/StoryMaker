@@ -42,3 +42,4 @@ testem.log
 Thumbs.db
 /firebase-debug.log
 /src/environments/environment.local.ts
+/src/environments/environment.production.ts
