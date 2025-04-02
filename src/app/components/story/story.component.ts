@@ -13,10 +13,11 @@ import { FormsModule } from '@angular/forms';
 import { FirestoreService } from '../../services/firestore.service';
 import { StoryChapter } from '../../models/story-chapter';
 import { FireStoreStory } from '../../models/firestore-story';
-import { ProgressTrackerComponent } from '../progress-tracker/progress-tracker.component';
 import { StoryUtilsService } from '../../utils/story-utils.service';
 import { BehaviorSubject } from 'rxjs';
 import { UserModel } from '../../models/user.model';
+import { LixService } from '../../services/lix.service';
+import { ProgressTrackerComponent } from '../progress-tracker/progress-tracker.component';
 
 @Component({
   selector: 'app-story',
@@ -43,13 +44,11 @@ export class StoryComponent implements OnInit, OnDestroy {
   @Input() user: UserModel | undefined | null;
 
   advancedOpen = false;
-  totalChapters = 8;
-  imagesPerChapter = 6;
+  imagesPerChapter = 'auto';
+  numberOfChapter = 'auto';
   wordsPerChapter = 'auto';
 
   story = new BehaviorSubject<FireStoreStory | null>(null);
-  mainCategory: string = 'sport';
-  subCategory: string = 'Spillere';
   inputTopic: string = '';
   chapters: StoryChapter[] = [];
   loading: boolean = false;
@@ -69,66 +68,24 @@ export class StoryComponent implements OnInit, OnDestroy {
   spaceSubcategories = ['Planeter', 'Stjernebilleder', 'Astronauter', 'Rumrejser'];
 
   selectedLix: number = 25;
-  lixLevels = [
-    { value: 5, label: "LIX 2-5 (0. klasse)" },
-    { value: 10, label: "LIX 5-10 (1. klasse)" },
-    { value: 15, label: "LIX 10-15 (2. klasse)" },
-    { value: 20, label: "LIX 15-20 (3. klasse)" },
-    { value: 25, label: "LIX 20-25 (4. klasse)" },
-    { value: 30, label: "LIX 25-30 (5. klasse)" },
-    { value: 35, label: "LIX 30-35 (6. klasse)" },
-    { value: 40, label: "LIX 35-40 (7. klasse)" },
-    { value: 45, label: "LIX 40-45 (8.-9. klasse)" },
-    { value: 50, label: "LIX 45+ (Gymnasium/voksen)" }
-  ];
 
-  wordCountMap: Record<number, number> = {
-    5: 50,
-    10: 100,
-    15: 200,
-    20: 350,
-    25: 500,
-    30: 700,
-    35: 900,
-    40: 1200,
-    45: 1500,
-    50: 2000
-  };
-
-  constructor(private aiService: AIService, private firestoreService: FirestoreService, public storyUtils: StoryUtilsService) { }
+  constructor(private aiService: AIService,
+    public lixService: LixService,
+    private firestoreService: FirestoreService,
+    public storyUtils: StoryUtilsService) {
+    // this.aiService.testLixLevels();
+  }
 
   async ngOnInit() {
-    this.updateSubcategories(); // Opdater underkategorier baseret på den valgte hovedkategori
-
     this.story.subscribe((story) => {
       if (story && story.chapters && story.chapters.length > 0) {
         this.saveStory(story);
       }
     })
-
-    await this.aiService.testLixLevels();
   }
 
   ngOnDestroy(): void {
     this.story.unsubscribe();
-  }
-
-  updateSubcategories() {
-    if (this.mainCategory === 'other') {
-      this.subcategories = [];
-      this.subCategory = '';
-    } else {
-      const categoryMap: { [key: string]: string[] } = {
-        sport: this.sportSubcategories,
-        music: this.musicSubcategories,
-        science: this.scienceSubcategories,
-        history: this.historySubcategories,
-        film: this.filmSubcategories,
-        nature: this.natureSubcategories,
-        space: this.spaceSubcategories,
-      };
-      this.subcategories = categoryMap[this.mainCategory] || [];
-    }
   }
 
   async generateStory() {
@@ -142,8 +99,17 @@ export class StoryComponent implements OnInit, OnDestroy {
     this.story.next(null);
     this.reset();
 
-    this.totalTasks = this.totalChapters + 1;
-    this.progressDescription = `Genererer kapitel 1 af ${this.totalChapters}`;
+    const imagesPerChapterVaue = this.getImagesPerChapter();
+    const numberOfChaptersValue = this.getChapters();
+    if (this.numberOfChapter === 'auto') {
+      const selectedLix = this.lixService.lixLevels.find(level => level.level === this.selectedLix);
+      this.totalTasks = selectedLix?.chapters as number + 1;
+    }
+    else {
+      this.totalTasks = numberOfChaptersValue + 1;
+    }
+
+    this.progressDescription = `Genererer kapitel 1 af ${numberOfChaptersValue}`;
     this.loading = true;
 
     try {
@@ -151,7 +117,7 @@ export class StoryComponent implements OnInit, OnDestroy {
 
       const wordCountPerChapter = this.getWordsPerChapter();
 
-      for await (let data of this.aiService.generateStoryStream(this.mainCategory, this.subCategory, this.inputTopic, this.selectedLix, this.totalChapters, this.imagesPerChapter, wordCountPerChapter)) {
+      for await (let data of this.aiService.generateStoryStream(this.inputTopic, this.selectedLix, numberOfChaptersValue, imagesPerChapterVaue, wordCountPerChapter)) {
         if (this.canceled) {
           this.cancelComplete = true;
           this.reset();
@@ -160,13 +126,13 @@ export class StoryComponent implements OnInit, OnDestroy {
 
         if ('title' in data) {
           this.chapters.push(data);
-          this.progressDescription = `Genererer kapitel ${this.chapters.length + 1} af ${this.totalChapters}`;
+          this.progressDescription = `Genererer kapitel ${this.chapters.length + 1} af ${numberOfChaptersValue}`;
           this.progressCompletedTasks++;
         } else {
           coverMetadata = data;
         }
 
-        if (this.progressCompletedTasks >= this.totalChapters) {
+        if (this.progressCompletedTasks >= numberOfChaptersValue) {
           this.progressDescription = `Gemmer historie`;
         }
       }
@@ -208,9 +174,23 @@ export class StoryComponent implements OnInit, OnDestroy {
 
   getWordsPerChapter(): number {
     if (this.wordsPerChapter === 'auto') {
-      return this.wordCountMap[this.selectedLix];
+      return this.lixService.getLixModelByLevel(this.selectedLix)?.wordsPerChapter || 150;
     }
     return Number(this.wordsPerChapter);
+  }
+
+  getChapters(): number {
+    if (this.numberOfChapter === 'auto') {
+      return this.lixService.getLixModelByLevel(this.selectedLix)?.chapters || 3;
+    }
+    return Number(this.numberOfChapter);
+  }
+
+  getImagesPerChapter(): number {
+    if (this.imagesPerChapter === 'auto') {
+      return this.lixService.getLixModelByLevel(this.selectedLix)?.imagesPerChapter || 2;
+    }
+    return Number(this.imagesPerChapter);
   }
 
   cancelGeneration() {

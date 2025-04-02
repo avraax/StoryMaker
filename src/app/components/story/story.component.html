@@ -1,42 +1,25 @@
 <mat-card class="container">
     <h2 class="section-title">Opret en ny historie</h2>
 
-    <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Vælg en hovedkategori</mat-label>
-        <mat-select [disabled]="loading" [(ngModel)]="mainCategory" (selectionChange)="updateSubcategories()">
-            <mat-option value="sport">Sport</mat-option>
-            <mat-option value="music">Musik</mat-option>
-            <mat-option value="science">Videnskab</mat-option>
-            <mat-option value="history">Historie</mat-option>
-            <mat-option value="film">Film & TV</mat-option>
-            <mat-option value="nature">Natur & Miljø</mat-option>
-            <mat-option value="space">Rummet</mat-option>
-            <mat-option value="other">Andet</mat-option> <!-- Added "Andet" -->
-        </mat-select>
-    </mat-form-field>
+    <div class="form-row main-input">
+        <mat-form-field appearance="outline" class="lix-field">
+            <mat-label>Vælg LIX-niveau</mat-label>
+            <mat-select [disabled]="loading" [(ngModel)]="selectedLix">
+                <mat-option *ngFor="let lix of lixService.lixLevels" [value]="lix.level">
+                    {{ lix.description }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
 
-    <!-- Hide subcategory selection if "Andet" is chosen -->
-    <mat-form-field appearance="outline" class="full-width" *ngIf="mainCategory && mainCategory !== 'other'">
-        <mat-label>Vælg en underkategori</mat-label>
-        <mat-select [disabled]="loading" [(ngModel)]="subCategory">
-            <mat-option *ngFor="let sub of subcategories" [value]="sub">{{ sub }}</mat-option>
-        </mat-select>
-    </mat-form-field>
+        <mat-form-field appearance="outline" class="text-field">
+            <mat-label>Indtast specifikt emne</mat-label>
+            <input matInput [(ngModel)]="inputTopic" placeholder="Fx Ronaldo, The Beatles, Romerriget eller Einstein" [disabled]="loading">
+        </mat-form-field>
 
-    <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Indtast specifikt emne</mat-label>
-        <input matInput [(ngModel)]="inputTopic" placeholder="Fx Einstein, The Beatles, eller Romerriget"
-            [disabled]="loading" (keydown.enter)="generateStory()">
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Vælg LIX-niveau</mat-label>
-        <mat-select [disabled]="loading" [(ngModel)]="selectedLix">
-            <mat-option *ngFor="let lix of lixLevels" [value]="lix.value">
-                {{ lix.label }}
-            </mat-option>
-        </mat-select>
-    </mat-form-field>
+        <button mat-raised-button color="primary" (click)="generateStory()" [disabled]="loading || !inputTopic || !selectedLix">
+            Opret Historie
+        </button>
+    </div>
 
     <!-- Avanceret Sektion -->
     <div class="advanced-section">
@@ -46,20 +29,10 @@
 
         <div *ngIf="advancedOpen" class="advanced-options">
             <mat-form-field appearance="outline" class="advanced-field">
-                <mat-label>Total kapitler</mat-label>
-                <mat-select [disabled]="loading" [(ngModel)]="totalChapters">
-                    <mat-option *ngFor="let num of [].constructor(20); let i = index" [value]="i + 1">
-                        {{ i + 1 }}
-                    </mat-option>
-                </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="advanced-field">
-                <mat-label>Billeder pr. Kapitel</mat-label>
-                <mat-select [disabled]="loading" [(ngModel)]="imagesPerChapter">
-                    <mat-option *ngFor="let num of [].constructor(12); let i = index" [value]="i + 1">
-                        {{ i + 1 }}
-                    </mat-option>
+                <mat-label>Antal kapitler</mat-label>
+                <mat-select [disabled]="loading" [(ngModel)]="numberOfChapter">
+                    <mat-option value="auto">Auto (ud fra LIX-niveau)</mat-option>
+                    <mat-option *ngFor="let num of [].constructor(20); let i = index" [value]="i + 1">{{ i + 1 }}</mat-option>
                 </mat-select>
             </mat-form-field>
 
@@ -75,15 +48,24 @@
                     <mat-option value="2000">2000 ord</mat-option>
                 </mat-select>
             </mat-form-field>
+
+            <mat-form-field appearance="outline" class="advanced-field">
+                <mat-label>Billeder pr. Kapitel</mat-label>
+                <mat-select [disabled]="loading" [(ngModel)]="imagesPerChapter">
+                    <mat-option value="auto">Auto</mat-option>
+                    <mat-option *ngFor="let num of [].constructor(21); let i = index" [value]="i">
+                        {{ i }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
         </div>
     </div>
 
-    <div class="button-group">
-        <button mat-raised-button color="primary" (click)="generateStory()"
-            [disabled]="loading || !inputTopic || !selectedLix">
+    <!-- <div class="button-group">
+        <button mat-raised-button color="primary" (click)="generateStory()" [disabled]="loading || !inputTopic || !selectedLix">
             Opret Historie
         </button>
-    </div>
+    </div> -->
 
     @if(loading || cancelComplete) {
     <mat-card class="progress-container">
