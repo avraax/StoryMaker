@@ -1,11 +1,12 @@
-import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, AfterViewInit, HostListener } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, AfterViewInit, HostListener, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FireStoreStory } from '../../models/firestore-story';
 import { MatIconModule } from '@angular/material/icon';
 import { StoryUtilsService } from '../../utils/story-utils.service';
 import { BehaviorSubject } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { UserModel } from '../../models/user.model';
+import { Story } from '../../models/story';
+import { WakeLockService } from '../../services/wake-lock.service';
 
 interface StorySlide {
   chapterTitle: string;
@@ -21,10 +22,10 @@ interface StorySlide {
   templateUrl: './story-viewer.component.html',
   styleUrls: ['./story-viewer.component.scss']
 })
-export class StoryViewerComponent implements OnInit {
-  @Input() story = new BehaviorSubject<FireStoreStory | null>(null);
+export class StoryViewerComponent implements OnInit, OnDestroy {
+  @Input() story = new BehaviorSubject<Story | null>(null);
   @Input() user: UserModel | undefined | null;
-  storyObj: FireStoreStory | null | undefined;
+  storyObj: Story | null | undefined;
   @Output() close = new EventEmitter<void>();
   @Output() readingPageNumber = new EventEmitter<number>();
   @Input() startAtPage: number = 1;
@@ -36,9 +37,11 @@ export class StoryViewerComponent implements OnInit {
   totalPages = 0; // Total number of pages including cover and last page
   chapterSlides: StorySlide[] = [];
 
-  constructor(public storyUtils: StoryUtilsService) { }
+  constructor(public storyUtils: StoryUtilsService, private wakeLockService: WakeLockService) { }
 
-  ngOnInit() {
+  ngOnInit(): void {
+    this.wakeLockService.enableWakeLock();
+    
     this.story.subscribe((story) => {
       this.storyObj = story;
       this.chapterSlides = this.generateSlides();
@@ -49,6 +52,9 @@ export class StoryViewerComponent implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    this.wakeLockService.disableWakeLock();
+  }
 
   closeStoryViewer() {
     this.readingPageNumber.emit(this.currentPageIndex + 1);

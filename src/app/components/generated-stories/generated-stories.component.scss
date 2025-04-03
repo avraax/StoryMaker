@@ -14,8 +14,21 @@
     width: 100%;
     border-collapse: collapse;
     background-color: inherit !important;
-    table-layout: fixed;
+    table-layout: auto;
     /* ✅ Prevents stretching and forces column widths */
+
+
+    .title-cell {
+      width: 100%;
+    }
+
+    .updatedAt-cell {
+      white-space: nowrap;
+    }
+    
+    .actions-cell {
+      white-space: nowrap;
+    }
 
     th {
       font-weight: bold;

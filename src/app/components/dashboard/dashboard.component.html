@@ -11,7 +11,7 @@
 
   <div class="content">
     
-    @if (user?.role === 'administrator' || user?.role === 'contributor') {
+    @if (user?.role === 'administrator' || user?.role === 'writer' || user?.role === 'contributor') {
       <mat-tab-group #tabs [(selectedIndex)]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
         <mat-tab label="Opret Historie">
           <app-story [user]="user" (navigateToGenerated)="switchToGeneratedStories()"></app-story>

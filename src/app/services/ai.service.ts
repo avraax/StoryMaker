@@ -4,6 +4,7 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { ImageService } from './image.service';
 import { LixService } from './lix.service';
+import { Story } from '../models/story';
 
 @Injectable({
     providedIn: 'root',
@@ -35,7 +36,7 @@ export class AIService {
         numberOfChapters: number,
         imagesPerChapter: number,
         wordsPerChapter: number
-    ): AsyncGenerator<StoryChapter | { description: string; image: string }, void, unknown> {
+    ): AsyncGenerator<StoryChapter | Story, void, unknown> {
 
         const maxTokens = this.estimateTokens(wordsPerChapter, lix);
 
@@ -114,24 +115,33 @@ export class AIService {
             }
         }
 
-        const summary = await this.generateStorySummary(conversationHistory);
-
+        const title = await this.generateStoryTitle(conversationHistory);
         const coverImages = await this.imageService.fetchImages(`${topic} profile picture`, 5);
         const coverImage = coverImages.find(img => img.startsWith("data:image")) || "";
 
-        yield { description: summary, image: coverImage };
+        var story: Story = {
+            id: '',
+            title: title,
+            description: '',
+            chapters: [],
+            updatedAt: new Date(),
+            image: coverImage,
+            sharedWith: []
+        }
+
+        yield story;
     }
 
-    private async generateStorySummary(conversationHistory: any[]): Promise<string> {
+    private async generateStoryTitle(conversationHistory: any[]): Promise<string> {
         const prompt = `
-            Du skal lave en kort opsummering af en længere historie baseret på følgende samtalehistorik:
+            Du skal lave en kort title af en længere historie baseret på følgende samtalehistorik:
 
             ${conversationHistory
                 .filter(msg => msg.role === "assistant")
                 .map((msg, index) => `Kapitel ${index + 1}: ${msg.content}`)
                 .join("\n")}
 
-            Opsummer hele historien i én sætning på max 20 ord, som kan vises på forsiden af en bog.
+            Opsummer hele historien i én titel på max 10 ord, som kan vises på forsiden af en bog.
         `;
 
         try {

@@ -18,6 +18,7 @@ import { BehaviorSubject } from 'rxjs';
 import { UserModel } from '../../models/user.model';
 import { LixService } from '../../services/lix.service';
 import { ProgressTrackerComponent } from '../progress-tracker/progress-tracker.component';
+import { Story } from '../../models/story';
 
 @Component({
   selector: 'app-story',
@@ -113,7 +114,7 @@ export class StoryComponent implements OnInit, OnDestroy {
     this.loading = true;
 
     try {
-      let coverMetadata: { description: string; image: string } | null = null;
+      let story: Story | null = null;
 
       const wordCountPerChapter = this.getWordsPerChapter();
 
@@ -124,12 +125,12 @@ export class StoryComponent implements OnInit, OnDestroy {
           return;
         }
 
-        if ('title' in data) {
-          this.chapters.push(data);
+        if ('imageQuery' in data) {
+          this.chapters.push(data as StoryChapter);
           this.progressDescription = `Genererer kapitel ${this.chapters.length + 1} af ${numberOfChaptersValue}`;
           this.progressCompletedTasks++;
         } else {
-          coverMetadata = data;
+          story = data as Story;
         }
 
         if (this.progressCompletedTasks >= numberOfChaptersValue) {
@@ -139,18 +140,18 @@ export class StoryComponent implements OnInit, OnDestroy {
 
       if (this.canceled) return;
 
-      if (!coverMetadata) {
+      if (!story) {
         throw new Error("Metadata mangler. Kunne ikke generere beskrivelse og forsidebillede.");
       }
 
       const date = new Date();
 
       this.story.next({
-        title: this.inputTopic,
+        title: story.title,
+        description: '',
+        aiPrompt: this.inputTopic,
         chapters: this.chapters,
-        author: 'ChatGPT',
-        description: coverMetadata.description,
-        image: coverMetadata.image,
+        image: story.image,
         createdAt: date,
         updatedAt: date,
         lix: this.selectedLix,

@@ -13,11 +13,6 @@
                                 <h1 class="cover-title">{{ storyObj.title }}</h1>
                                 <!-- <h2 class="cover-author">Af: {{ storyObj.author || 'Ukendt forfatter' }}</h2> -->
                                 <p class="cover-description">{{ storyObj.description }}</p>
-
-                                <!-- LIX Information -->
-                                <div class="lix-box">
-                                    <span>LIX: {{ storyObj.lix }}</span>
-                                </div>
                             </div>
                         </div>
 
@@ -53,7 +48,6 @@
                         <div class="custom-swiper-slide last-page">
                             <div class="last-content">
                                 <h2>Tak for at læse "{{ storyObj.title }}"</h2>
-                                <p>Forfatter: {{ storyObj.author || 'Ukendt' }}</p>
                                 <p>Vi håber, du nød historien!</p>
                             </div>
                         </div>
@@ -71,7 +65,7 @@
                             Næste
                         </button>
                     </div>
-                    @if(user?.role === 'administrator') {
+                    @if(user?.role === 'administrator' || user?.role === 'contributor') {
                         <button mat-raised-button color="accent" class="export-button" (click)="exportToPDF()">Eksporter til PDF</button>
                     }
                 </div>
