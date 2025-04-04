@@ -127,6 +127,7 @@ export class FirestoreService {
     const mappedStory: Story = {
       id: storySnap.id as string,
       title: story.title,
+      aiPrompt: story.aiPrompt,
       description: story.description,
       updatedAt: story.updatedAt,
       chapters: story.chapters,
@@ -208,6 +209,7 @@ export class FirestoreService {
           const mappedStory: Story = {
             id: story.id,
             title: story.title,
+            aiPrompt: story.aiPrompt,
             description: story.description,
             updatedAt: story.updatedAt,
             chapters: story.chapters,

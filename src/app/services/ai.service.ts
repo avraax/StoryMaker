@@ -122,6 +122,7 @@ export class AIService {
         var story: Story = {
             id: '',
             title: title,
+            aiPrompt: topic,
             description: '',
             chapters: [],
             updatedAt: new Date(),
