@@ -5,6 +5,7 @@ import { FireStoreStory } from '../models/firestore-story';
 import { getAuth } from '@angular/fire/auth';
 import { UserModel } from '../models/user.model';
 import { UserShareModel } from '../models/user-share.model';
+import { Story } from '../models/story';
 
 @Injectable({
   providedIn: 'root'
@@ -19,21 +20,7 @@ export class FirestoreService {
     const storage = getStorage();
     const storiesCollection = collection(this.firestore, 'stories');
 
-    // Save story skeleton (without images)
-    const storyToSave: FireStoreStory = {
-      title: story.title,
-      author: story.author,
-      description: story.description,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: userId,
-      sharedWith: [],
-      chapters: [],
-      lix: story.lix,
-      image: ''
-    };
-
-    const storyDocRef = await addDoc(storiesCollection, storyToSave);
+    const storyDocRef = await addDoc(storiesCollection, story);
     const storyId = storyDocRef.id;
 
     // Upload Cover Image
@@ -43,7 +30,7 @@ export class FirestoreService {
       const metadata = { customMetadata: { creator: userId } };
 
       await uploadString(coverImageRef, story.image, 'data_url', metadata);
-      storyToSave.image = await getDownloadURL(coverImageRef);
+      story.image = await getDownloadURL(coverImageRef);
     }
 
     // Upload Chapter Images
@@ -70,7 +57,7 @@ export class FirestoreService {
 
     // Final update with images added
     await updateDoc(storyDocRef, {
-      image: storyToSave.image,
+      image: story.image,
       chapters: updatedChapters
     });
   }
@@ -123,7 +110,7 @@ export class FirestoreService {
     return `stories/${userId}/${storyId}/chapter_${chapterIndex}_${imageIndex}.jpg`;
   }
 
-  async getStoryById(storyId: string): Promise<FireStoreStory | null> {
+  async getStoryById(storyId: string): Promise<Story | null> {
     const auth = getAuth();
     if (!auth.currentUser) throw new Error('Unauthorized');
 
@@ -137,7 +124,19 @@ export class FirestoreService {
       throw new Error('Unauthorized');
     }
 
-    return story;
+    const mappedStory: Story = {
+      id: storySnap.id as string,
+      title: story.title,
+      aiPrompt: story.aiPrompt,
+      description: story.description,
+      updatedAt: story.updatedAt,
+      chapters: story.chapters,
+      image: story.image || '',
+      sharedWith: story.sharedWith,
+      pageNumber: story.pageNumber,
+    };
+
+    return mappedStory;
   }
 
   async updateStoryPageNumber(storyId: string, userEmail: string, pageNumber: number) {
@@ -208,7 +207,7 @@ export class FirestoreService {
     }
   }
 
-  async getStoriesForUser(user: UserModel): Promise<FireStoreStory[]> {
+  async getStoriesForUser(user: UserModel): Promise<Story[]> {
     const storiesCollection = collection(this.firestore, 'stories') as CollectionReference<FireStoreStory>;
 
     try {
@@ -217,14 +216,20 @@ export class FirestoreService {
       return storiesSnapshot.docs
         .map(doc => ({ ...doc.data(), id: doc.id }))
         .filter(story => story.createdBy === user.uid || story.sharedWith.includes(user.email))
-        .map(story => ({
-          ...story,
-          image: story.image || '',
-          chapters: story.chapters?.map(chapter => ({
-            ...chapter,
-            images: chapter.images?.filter(img => img.startsWith('http')) || []
-          })) || []
-        }));
+        .map(story => {
+          const mappedStory: Story = {
+            id: story.id,
+            title: story.title,
+            aiPrompt: story.aiPrompt,
+            description: story.description,
+            updatedAt: story.updatedAt,
+            chapters: story.chapters,
+            image: story.image || '',
+            sharedWith: story.sharedWith,
+            pageNumber: story.pageNumber
+          };
+          return mappedStory;
+        });
     } catch (error) {
       console.error("Error fetching stories for user:", error);
       return [];
@@ -265,13 +270,13 @@ export class FirestoreService {
 
       if (userDoc.exists()) {
         const userData = userDoc.data() as UserModel;
-        return userData.role || 'reader'; // Default role if missing
+        return userData.role || 'reader';
       }
 
-      return 'reader'; // Default role for new users
+      return 'reader';
     } catch (error) {
       console.error("Error fetching user role:", error);
-      return 'reader'; // Fallback role
+      return 'reader';
     }
   }
 

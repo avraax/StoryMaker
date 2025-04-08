@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
-import { FireStoreStory } from '../models/firestore-story';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import { Story } from '../models/story';
 
 @Injectable({
   providedIn: 'root'
 })
 export class StoryUtilsService {
-  async exportToPDF(story: FireStoreStory | null, storyContentElement: HTMLElement) {
+  async exportToPDF(story: Story | null, storyContentElement: HTMLElement) {
     if (!story || !storyContentElement) {
       console.error("Story or storyContentElement is missing.");
       return;

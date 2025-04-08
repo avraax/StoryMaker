@@ -8,6 +8,42 @@
         background: white;
         border-radius: 10px;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
+        .form-row.main-input {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+
+            mat-form-field.lix-field {}
+
+            mat-form-field.text-field {
+                flex: 1;
+            }
+
+            button {
+                flex-basis: 150px;
+                white-space: nowrap;
+            }
+        }
+
+        .advanced-section {
+
+            .advanced-toggle {
+                display: block;
+                padding-left: 0;
+                margin-right: auto;
+            }
+
+            .advanced-options {
+                display: flex;
+                gap: 20px;
+                margin-top: 10px;
+
+                mat-form-field {
+                    flex: 1
+                }
+            }
+        }
     }
 
     .loading-spinner {
@@ -54,6 +90,10 @@
     mat-progress-bar {
         width: 100%;
         margin-bottom: 5px;
+    }
+
+    button {
+        cursor: pointer;
     }
 }
 

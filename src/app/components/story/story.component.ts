@@ -13,10 +13,12 @@ import { FormsModule } from '@angular/forms';
 import { FirestoreService } from '../../services/firestore.service';
 import { StoryChapter } from '../../models/story-chapter';
 import { FireStoreStory } from '../../models/firestore-story';
-import { ProgressTrackerComponent } from '../progress-tracker/progress-tracker.component';
 import { StoryUtilsService } from '../../utils/story-utils.service';
 import { BehaviorSubject } from 'rxjs';
 import { UserModel } from '../../models/user.model';
+import { LixService } from '../../services/lix.service';
+import { ProgressTrackerComponent } from '../progress-tracker/progress-tracker.component';
+import { Story } from '../../models/story';
 
 @Component({
   selector: 'app-story',
@@ -41,9 +43,13 @@ import { UserModel } from '../../models/user.model';
 export class StoryComponent implements OnInit, OnDestroy {
   @Output() navigateToGenerated = new EventEmitter<void>();
   @Input() user: UserModel | undefined | null;
+
+  advancedOpen = false;
+  imagesPerChapter = 'auto';
+  numberOfChapter = 'auto';
+  wordsPerChapter = 'auto';
+
   story = new BehaviorSubject<FireStoreStory | null>(null);
-  mainCategory: string = 'sport';
-  subCategory: string = 'Spillere';
   inputTopic: string = '';
   chapters: StoryChapter[] = [];
   loading: boolean = false;
@@ -62,27 +68,16 @@ export class StoryComponent implements OnInit, OnDestroy {
   natureSubcategories = ['Klimaændringer', 'Dyr', 'Planter', 'Økosystemer'];
   spaceSubcategories = ['Planeter', 'Stjernebilleder', 'Astronauter', 'Rumrejser'];
 
-  selectedLix: number = 15;
-  lixLevels = [
-    { value: 3, label: "LIX 3-5 (0. kl.)" },
-    { value: 5, label: "LIX 4-6 (0.-1. kl.)" },
-    { value: 7, label: "LIX 5-7 (1. kl.)" },
-    { value: 9, label: "LIX 6-8 (2. kl.)" },
-    { value: 11, label: "LIX 7-9 (2.-3. kl.)" },
-    { value: 13, label: "LIX 9-11 (3.-4. kl.)" },
-    { value: 15, label: "LIX 11-13 (4.-5. kl.)" },
-    { value: 20, label: "LIX 15-20 (5.-6. kl.)" },
-    { value: 25, label: "LIX 20-25 (6.-7. kl.)" },
-    { value: 30, label: "LIX 25-30 (7.-8. kl.)" },
-    { value: 35, label: "LIX 30-35 (8.-9. kl.)" },
-    { value: 40, label: "LIX 35-40 (9. kl.)" },
-    { value: 45, label: "LIX >40 (Gymnasium/voksen)" }
-  ];
-  constructor(private aiService: AIService, private firestoreService: FirestoreService, public storyUtils: StoryUtilsService) { }
+  selectedLix: number = 25;
 
-  ngOnInit() {
-    this.updateSubcategories(); // Opdater underkategorier baseret på den valgte hovedkategori
+  constructor(private aiService: AIService,
+    public lixService: LixService,
+    private firestoreService: FirestoreService,
+    public storyUtils: StoryUtilsService) {
+    // this.aiService.testLixLevels();
+  }
 
+  async ngOnInit() {
     this.story.subscribe((story) => {
       if (story && story.chapters && story.chapters.length > 0) {
         this.saveStory(story);
@@ -94,95 +89,111 @@ export class StoryComponent implements OnInit, OnDestroy {
     this.story.unsubscribe();
   }
 
-  updateSubcategories() {
-    if (this.mainCategory === 'other') {
-      this.subcategories = [];
-      this.subCategory = '';
-    } else {
-      const categoryMap: { [key: string]: string[] } = {
-        sport: this.sportSubcategories,
-        music: this.musicSubcategories,
-        science: this.scienceSubcategories,
-        history: this.historySubcategories,
-        film: this.filmSubcategories,
-        nature: this.natureSubcategories,
-        space: this.spaceSubcategories,
-      };
-      this.subcategories = categoryMap[this.mainCategory] || [];
-    }
-  }
-
   async generateStory() {
     if (!this.inputTopic || !this.selectedLix || !this.user) {
       return;
     }
-  
+
     this.cancelComplete = false;
     this.canceled = false;
-  
+
     this.story.next(null);
     this.reset();
-  
-    const totalChapters = 10;
-    const imagesPerChapter = 12;
-    this.totalTasks = totalChapters + 1;
-    this.progressDescription = `Genererer kapitel 1 af ${totalChapters}`;
+
+    const imagesPerChapterVaue = this.getImagesPerChapter();
+    const numberOfChaptersValue = this.getChapters();
+    if (this.numberOfChapter === 'auto') {
+      const selectedLix = this.lixService.lixLevels.find(level => level.level === this.selectedLix);
+      this.totalTasks = selectedLix?.chapters as number + 1;
+    }
+    else {
+      this.totalTasks = numberOfChaptersValue + 1;
+    }
+
+    this.progressDescription = `Genererer kapitel 1 af ${numberOfChaptersValue}`;
     this.loading = true;
-  
+
     try {
-      let coverMetadata: { description: string; image: string } | null = null;
-  
-      for await (let data of this.aiService.generateStoryStream(this.mainCategory, this.subCategory, this.inputTopic, this.selectedLix, totalChapters, imagesPerChapter)) {
+      let story: Story | null = null;
+
+      const wordCountPerChapter = this.getWordsPerChapter();
+
+      for await (let data of this.aiService.generateStoryStream(this.inputTopic, this.selectedLix, numberOfChaptersValue, imagesPerChapterVaue, wordCountPerChapter)) {
         if (this.canceled) {
           this.cancelComplete = true;
           this.reset();
           return;
         }
-  
-        if ('title' in data) {
-          this.chapters.push(data);
-          this.progressDescription = `Genererer kapitel ${this.chapters.length + 1} af ${totalChapters}`;
+
+        if ('imageQuery' in data) {
+          this.chapters.push(data as StoryChapter);
+          this.progressDescription = `Genererer kapitel ${this.chapters.length + 1} af ${numberOfChaptersValue}`;
           this.progressCompletedTasks++;
         } else {
-          coverMetadata = data;
+          story = data as Story;
         }
-  
-        if (this.progressCompletedTasks >= totalChapters) {
+
+        if (this.progressCompletedTasks >= numberOfChaptersValue) {
           this.progressDescription = `Gemmer historie`;
         }
       }
-  
+
       if (this.canceled) return;
-  
-      if (!coverMetadata) {
+
+      if (!story) {
         throw new Error("Metadata mangler. Kunne ikke generere beskrivelse og forsidebillede.");
       }
-  
+
       const date = new Date();
-  
+
       this.story.next({
-        title: this.inputTopic,
+        title: story.title,
+        description: '',
+        aiPrompt: this.inputTopic,
         chapters: this.chapters,
-        author: 'ChatGPT',
-        description: coverMetadata.description,
-        image: coverMetadata.image,
+        image: story.image,
         createdAt: date,
         updatedAt: date,
         lix: this.selectedLix,
         createdBy: this.user.uid,
         sharedWith: []
       });
-  
+
     } catch (error) {
       this.cancelComplete = true;
       this.reset();
       console.error(error);
     }
-  
+
     this.progressCompletedTasks++;
     this.loading = false; // ✅ End of progress
   }
-  
+
+  toggleAdvanced() {
+    this.advancedOpen = !this.advancedOpen;
+  }
+
+  getWordsPerChapter(): number {
+    if (this.wordsPerChapter === 'auto') {
+      return this.lixService.getLixModelByLevel(this.selectedLix)?.wordsPerChapter || 150;
+    }
+    return Number(this.wordsPerChapter);
+  }
+
+  getChapters(): number {
+    if (this.numberOfChapter === 'auto') {
+      return this.lixService.getLixModelByLevel(this.selectedLix)?.chapters || 3;
+    }
+    return Number(this.numberOfChapter);
+  }
+
+  getImagesPerChapter(): number {
+    if (this.imagesPerChapter === 'auto') {
+      return this.lixService.getLixModelByLevel(this.selectedLix)?.imagesPerChapter || 2;
+    }
+    return Number(this.imagesPerChapter);
+  }
+
   cancelGeneration() {
     this.canceled = true;
     this.progressDescription = 'Afbryder...';

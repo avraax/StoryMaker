@@ -6,7 +6,6 @@ import {
   Renderer2
 } from '@angular/core';
 import { FirestoreService } from '../../services/firestore.service';
-import { FireStoreStory } from '../../models/firestore-story';
 import { MatCardModule } from '@angular/material/card';
 import { MatListModule } from '@angular/material/list';
 import { MatButtonModule } from '@angular/material/button';
@@ -22,6 +21,7 @@ import { ShareStoryDialogComponent } from '../share-story-dialog/share-story-dia
 import { UserModel } from '../../models/user.model';
 import { UserShareModel } from '../../models/user-share.model';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { Story } from '../../models/story';
 
 @Component({
   selector: 'app-generated-stories',
@@ -42,8 +42,10 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 })
 export class GeneratedStoriesComponent implements OnInit, OnDestroy {
   @Input() user: UserModel | undefined | null;
-  stories: FireStoreStory[] = [];
-  public selectedStory = new BehaviorSubject<FireStoreStory | null>(null);
+  stories: Story[] = [];
+  displayedColumns = window.innerWidth < 768 ? ['title', 'actions'] : ['title', 'updatedAt', 'actions'];
+
+  public selectedStory = new BehaviorSubject<Story | null>(null);
   private orientationChangeListener: (() => void) | null = null;
 
   constructor(
@@ -100,7 +102,8 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
     }
   }
 
-  public openStoryViewer(story: FireStoreStory) {
+  public async openStoryViewer(storyId: string) {
+    const story = await this.firestoreService.getStoryById(storyId);
     this.selectedStory.next(story);
     this.enterFullscreen();
     this.addOrientationListener();
@@ -132,13 +135,14 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
     }
   }
 
-  getResumePageNumber(story: FireStoreStory | null): number {
+  getResumePageNumber(story: Story | null): number {
     const email = this.user?.email as string;
     const safeEmail = email.replace(/\./g, '_');
     return (story?.pageNumber?.[safeEmail]) ?? 1;
   }
 
-  public openShareDialog(story: FireStoreStory) {
+  public async openShareDialog(storyId: string) {
+    const story = await this.firestoreService.getStoryById(storyId);
     const dialogRef = this.dialog.open(ShareStoryDialogComponent, {
       width: '400px',
       data: { story }
@@ -146,12 +150,12 @@ export class GeneratedStoriesComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe((assignedUsers: UserShareModel[]) => {
       if (assignedUsers !== undefined) {
-        this.firestoreService.updateStorySharing(story.id as string, assignedUsers);
+        this.firestoreService.updateStorySharing(storyId, assignedUsers);
       }
     });
   }
 
-  getStoryProgressFromPageNumber(story: FireStoreStory): number {
+  getStoryProgressFromPageNumber(story: Story): number {
     const email = this.user?.email as string;
     const safeEmail = email.replace(/\./g, '_');
     const pageNumber = story.pageNumber?.[safeEmail] || 0;
