@@ -83,7 +83,6 @@ export class ImageService {
     return null;
   }
 
-  // 🔄 Existing Google CSE + proxy fallback
   private async fetchGoogleImages(imageQuery: string, maxImages: number): Promise<string[]> {
     let images: string[] = [];
     let startIndex = 1;
@@ -121,7 +120,7 @@ export class ImageService {
           key: environment.googleConfig.apiKey,
           num: batchSize,
           start: startIndex,
-          imgSize: "large",
+          imgSize: "small",
           imgType: "photo",
           safe: "high",
         },
