@@ -120,7 +120,7 @@ export class ImageService {
           key: environment.googleConfig.apiKey,
           num: batchSize,
           start: startIndex,
-          imgSize: "small",
+          imgSize: "medium",
           imgType: "photo",
           safe: "high",
         },
