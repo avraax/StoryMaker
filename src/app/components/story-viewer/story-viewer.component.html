@@ -32,13 +32,9 @@
                                                 {{ paragraph }}
                                             </p>
                                         </div>
-                                        <div class="chapter-images" *ngIf="slide.images.length > 0">
-                                            <div class="image-row" *ngFor="let imgChunk of groupImages(slide.images, 2)">
-                                                <div class="image-wrapper" *ngFor="let img of imgChunk">
-                                                    <img [src]="img" class="chapter-image">
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <div class="chapter-image" *ngIf="slide.images.length > 0">
+                                            <img [src]="slide.images[0]" class="full-image">
+                                          </div>
                                     </div>
                                 </div>
                             </div>

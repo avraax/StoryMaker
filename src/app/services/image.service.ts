@@ -104,7 +104,7 @@ export class ImageService {
         if (googleImages.length < batchSize) break;
       }
     } catch (error) {
-      console.error("❌ Error fetching Google images:", error);
+      console.error("Error fetching Google images:", error);
     }
 
     return images;

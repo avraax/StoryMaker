@@ -87,36 +87,35 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
 
   generateSlides(): StorySlide[] {
     if (!this.storyObj || !this.storyObj.chapters) return [];
-
+  
     let slides: StorySlide[] = [];
-
+  
     this.storyObj.chapters.forEach((chapter) => {
-      const paragraphs = chapter.texts;
+      const texts = chapter.texts || [];
       const images = chapter.images || [];
+      const paragraphs = [...texts]; // clone to avoid mutation
+  
       let firstSlide = true;
-
+      let imageIndex = 0;
+  
       for (let i = 0; i < paragraphs.length; i += 2) {
-        let pageImages: string[] = [];
-
-        // Del billederne op i grupper af 4 per side, men organiseret i rækker af 2
-        const imageIndex = Math.floor(i / 2) * 4;
-        if (images.length > imageIndex) {
-          pageImages = images.slice(imageIndex, imageIndex + 4);
-        }
-
+        const textChunk = paragraphs.slice(i, i + 2);
+        const image = imageIndex < images.length ? [images[imageIndex]] : [];
+  
         slides.push({
-          chapterTitle: firstSlide ? chapter.title : '', // Titel kun på første slide
-          texts: paragraphs.slice(i, i + 2), // Maks 2 paragraffer
-          images: pageImages, // Maks 4 billeder per side (2 per række)
+          chapterTitle: firstSlide ? chapter.title : '',
+          texts: textChunk,
+          images: image,
           isFirstSlide: firstSlide
         });
-
+  
+        imageIndex++; // advance image only once per slide
         firstSlide = false;
       }
     });
-
+  
     return slides;
-  }
+  }  
 
   groupImages(images: string[], chunkSize: number): string[][] {
     const groupedImages: string[][] = [];

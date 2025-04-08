@@ -65,14 +65,18 @@ export class AIService {
   
               Emne: ${topic}
               Resume af tidligere kapitler: ${previousChapterSummary}
+
+              Brug emnet og kapitlets handling til at skabe en passende billedsøgningsforespørgsel.
   
               **Udnyt maks. tokens: ${maxTokens}.**
               Returnér resultatet som gyldigt JSON:
               {
                   "title": "Kapitel ${chapterIndex}: Titel",
                   "texts": ["Afsnit 1", "Afsnit 2", "Afsnit 3", ...],
-                  "imageQuery": "Relateret billedsøgning baseret på kapitlet"
+                  "imageQuery": "A short list of keywords in english that visually represent this chapter. Use only concrete terms such as characters, places, or events. No full sentences, punctuation, or abstract/emotional phrases. Keywords must be separated by spaces."
               }
+
+              **imageQuery must consist of 3–5 keywords and should be suitable for a Google Images search and should match what someone might expect to see visually in this chapter.**
           `;
 
             conversationHistory.push({ role: "user", content: userPrompt });

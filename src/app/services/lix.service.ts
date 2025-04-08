@@ -14,7 +14,7 @@ export class LixService {
       description: "LIX 2-5 (0. klasse)",
       aiInstruction: "Skriv en meget enkel historie med meget korte sætninger og grundlæggende ord. Undgå komplekse ord eller lange sætninger.",
       chapters: 2,
-      imagesPerChapter: 2
+      imagesPerChapter: 1
     },
     {
       level: 10,
@@ -23,7 +23,7 @@ export class LixService {
       description: "LIX 5-10 (1. klasse)",
       aiInstruction: "Skriv en enkel historie med korte sætninger og enkelt sprog. Undgå svære ord og fokuser på klarhed.",
       chapters: 3,
-      imagesPerChapter: 4
+      imagesPerChapter: 1
     },
     {
       level: 15,
@@ -32,7 +32,7 @@ export class LixService {
       description: "LIX 10-15 (2. klasse)",
       aiInstruction: "Skriv en let forståelig historie med korte sætninger og enkelte komplekse ord.",
       chapters: 3,
-      imagesPerChapter: 6
+      imagesPerChapter: 2
     },
     {
       level: 20,
@@ -41,7 +41,7 @@ export class LixService {
       description: "LIX 15-20 (3. klasse)",
       aiInstruction: "Skriv en historie med klare og korte sætninger. Brug enkelte længere sætninger og få komplekse ord.",
       chapters: 4,
-      imagesPerChapter: 8
+      imagesPerChapter: 2
     },
     {
       level: 25,
@@ -50,7 +50,7 @@ export class LixService {
       description: "LIX 20-25 (4. klasse)",
       aiInstruction: "Skriv en historie med varieret sætningslængde og nogle komplekse ord.",
       chapters: 5,
-      imagesPerChapter: 10
+      imagesPerChapter: 2
     },
     {
       level: 30,
@@ -59,7 +59,7 @@ export class LixService {
       description: "LIX 25-30 (5. klasse)",
       aiInstruction: "Skriv en moderat kompleks historie med varieret sprog og strukturer.",
       chapters: 6,
-      imagesPerChapter: 12
+      imagesPerChapter: 2
     },
     {
       level: 35,
@@ -68,7 +68,7 @@ export class LixService {
       description: "LIX 30-35 (6. klasse)",
       aiInstruction: "Skriv en detaljeret historie med længere sætninger og rigere ordforråd.",
       chapters: 7,
-      imagesPerChapter: 14
+      imagesPerChapter: 3
     },
     {
       level: 40,
@@ -77,7 +77,7 @@ export class LixService {
       description: "LIX 35-40 (7. klasse)",
       aiInstruction: "Skriv en kompleks historie med varieret sætningsstruktur, detaljerede beskrivelser og beriget ordforråd.",
       chapters: 8,
-      imagesPerChapter: 16
+      imagesPerChapter: 3
     },
     {
       level: 45,
@@ -86,7 +86,7 @@ export class LixService {
       description: "LIX 40-45 (8.-9. klasse)",
       aiInstruction: "Skriv en avanceret historie med komplekse sætninger, nuanceret ordforråd og detaljerede beskrivelser.",
       chapters: 10,
-      imagesPerChapter: 18
+      imagesPerChapter: 3
     },
     {
       level: 50,
@@ -95,7 +95,7 @@ export class LixService {
       description: "LIX 45+ (Gymnasium/voksen)",
       aiInstruction: "Skriv en sofistikeret og meget detaljeret historie med komplekse strukturer og avanceret ordforråd.",
       chapters: 12,
-      imagesPerChapter: 20
+      imagesPerChapter: 3
     }
   ];
 

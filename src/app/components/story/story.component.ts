@@ -212,10 +212,6 @@ export class StoryComponent implements OnInit, OnDestroy {
   async saveStory(story: FireStoreStory | undefined | null) {
     if (!this.user || !story) return;
 
-    try {
-      await this.firestoreService.saveStory(this.user.uid, story);
-    } catch (error) {
-      console.error("Error saving story:", error);
-    }
+    await this.firestoreService.saveStory(this.user.uid, story);
   }
 }
