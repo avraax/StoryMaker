@@ -73,3 +73,5 @@ localhost-key.pem
 /frontend/node_modules
 /backend/functions/node_modules
 .angular
+/frontend/src/environments/environment.local.ts
+/frontend/src/environments/environment.production.ts
