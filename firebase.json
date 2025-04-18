@@ -32,5 +32,13 @@
         "destination": "/index.html"
       }
     ]
+  },
+  "functions": {
+    "source": "backend/functions",
+    "runtime": "nodejs18"
+  },
+  "firestore": {
+    "rules": "storage.rules",
+    "indexes": "firestore.indexes.json"
   }
 }

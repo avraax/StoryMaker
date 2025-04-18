@@ -38,6 +38,14 @@ export class AIService {
         wordsPerChapter: number
     ): AsyncGenerator<StoryChapter | Story, void, unknown> {
 
+        return await axios.post(`${environment.backendUrl}/generateStory`,
+            {
+                prompt: "test prompt",
+                lixNumber: 25,
+                userId: 1,
+                storyId: 2
+            });
+
         const maxTokens = this.estimateTokens(wordsPerChapter, lix);
 
         let conversationHistory: any[] = [];

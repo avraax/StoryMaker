@@ -1,5 +1,6 @@
 export const environment = {
   production: false,
+  backendUrl: '',
   imageProvider: '',
   firebaseConfig: {
     apiKey: "",

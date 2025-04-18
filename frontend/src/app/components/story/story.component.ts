@@ -58,16 +58,6 @@ export class StoryComponent implements OnInit, OnDestroy {
   progressCompletedTasks: number = 0;
   canceled: boolean = false;
   cancelComplete: boolean = false;
-
-  subcategories: string[] = [];
-  sportSubcategories = ['Spillere', 'Trænere', 'Klubber', 'Historiske Øjeblikke'];
-  musicSubcategories = ['Kunstnere', 'Bands', 'Musikgenrer', 'Historiske Koncerter'];
-  scienceSubcategories = ['Opfindelser', 'Forskere', 'Naturvidenskab', 'Teknologi'];
-  historySubcategories = ['Verdenskrige', 'Berømte Personer', 'Store Opdagelser', 'Gamle Civilisationer'];
-  filmSubcategories = ['Skuespillere', 'Filmgenrer', 'TV-serier', 'Kendte Instruktører', 'Film'];
-  natureSubcategories = ['Klimaændringer', 'Dyr', 'Planter', 'Økosystemer'];
-  spaceSubcategories = ['Planeter', 'Stjernebilleder', 'Astronauter', 'Rumrejser'];
-
   selectedLix: number = 25;
 
   constructor(private aiService: AIService,
